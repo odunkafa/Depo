@@ -7,6 +7,23 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d1f35">
 <title>₿ BTC Takip</title>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- OneSignal Push Bildirimi -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "2c1770c1-1f4f-4555-8246-16461d2dfa16",
+      safari_web_id: "web.onesignal.auto.2c1770c1-1f4f-4555-8246-16461d2dfa16",
+      notifyButton: { enable: false },
+      allowLocalhostAsSecureOrigin: true,
+    });
+  });
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -420,6 +437,52 @@ tbody tr:active{background:var(--card2);}
 .cal-day.selected { background:rgba(0,212,188,.2); border-color:var(--teal); color:var(--teal); font-weight:900; }
 .cal-day.today { border-color:rgba(247,147,26,.5); color:var(--gold); }
 .cal-day.recommended { background:rgba(0,212,188,.06); }
+
+/* ── BİLDİRİM AYARLARI ── */
+.notif-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 0; border-bottom:1px solid rgba(39,70,102,.25);
+  gap:10px; flex-wrap:wrap;
+}
+.notif-row:last-child { border-bottom:none; }
+.notif-label { flex:1; min-width:0; }
+.notif-title { font-size:.86rem; font-weight:600; color:var(--text); }
+.notif-sub { font-size:.72rem; color:var(--muted); margin-top:2px; line-height:1.4; }
+.notif-select {
+  background:var(--card2); border:1px solid var(--border);
+  border-radius:8px; padding:6px 10px; color:var(--text);
+  font-family:inherit; font-size:.8rem; font-weight:600;
+  cursor:pointer; flex-shrink:0;
+}
+.notif-time {
+  background:var(--bg); border:1.5px solid var(--border);
+  border-radius:8px; padding:6px 10px; color:var(--gold);
+  font-family:'JetBrains Mono',monospace; font-size:.9rem; font-weight:700;
+  width:58px; text-align:center; outline:none;
+}
+.notif-time:focus { border-color:var(--gold); }
+.notif-chip {
+  background:var(--card2); border:1px solid var(--border);
+  border-radius:99px; padding:5px 12px; font-size:.75rem; font-weight:700;
+  color:var(--muted); cursor:pointer; transition:.15s; font-family:inherit;
+  flex-shrink:0;
+}
+.notif-chip.active { background:rgba(0,212,188,.15); border-color:var(--teal); color:var(--teal); }
+.notif-chip:active { transform:scale(.94); }
+
+/* Toggle switch */
+.notif-toggle { position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0; }
+.notif-toggle input { opacity:0; width:0; height:0; }
+.notif-slider {
+  position:absolute; cursor:pointer; inset:0;
+  background:var(--border); border-radius:24px; transition:.2s;
+}
+.notif-slider:before {
+  content:''; position:absolute; height:18px; width:18px;
+  left:3px; bottom:3px; background:white; border-radius:50%; transition:.2s;
+}
+.notif-toggle input:checked + .notif-slider { background:var(--teal); }
+.notif-toggle input:checked + .notif-slider:before { transform:translateX(20px); }
 
 /* ── BTC CANLI GRAFİK ── */
 .period-btn {
@@ -923,6 +986,323 @@ tbody tr:active{background:var(--card2);}
       </div>
     </div>
 
+    <!-- BİLDİRİM AYARLARI -->
+    <div class="card" id="notifCard">
+      <div class="card-header" onclick="toggleCard('notifCard')">
+        <div class="card-title">🔔 Bildirim Ayarları</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Gmail adresi -->
+        <div style="margin-bottom:16px">
+          <label class="input-label">📧 Gmail Adresin</label>
+          <input class="input-field normal" id="notifEmail" type="email" placeholder="ornek@gmail.com">
+          <div style="font-size:.72rem;color:var(--muted);margin-top:5px">Bildirimler bu adrese gönderilecek</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Genel ayarlar -->
+        <div class="section-title">⚙️ Genel</div>
+
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Kontrol Sıklığı</div>
+            <div class="notif-sub">Apps Script kaç dakikada bir kontrol etsin</div>
+          </div>
+          <select class="notif-select" id="notifFreq">
+            <option value="15">15 dk</option>
+            <option value="30" selected>30 dk</option>
+            <option value="60">60 dk</option>
+            <option value="120">2 saat</option>
+          </select>
+        </div>
+
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Bildirim Saati Aralığı</div>
+            <div class="notif-sub">Bu saatler dışında bildirim gönderme</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input class="notif-time" id="notifTimeStart" type="number" min="0" max="23" value="8" placeholder="08">
+            <span style="color:var(--muted);font-size:.8rem">—</span>
+            <input class="notif-time" id="notifTimeEnd" type="number" min="0" max="23" value="22" placeholder="22">
+          </div>
+        </div>
+
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Tekrar Engeli</div>
+            <div class="notif-sub">Aynı bildirim ne kadar süre tekrar gönderilmesin</div>
+          </div>
+          <select class="notif-select" id="notifCooldown">
+            <option value="6">6 saat</option>
+            <option value="12" selected>12 saat</option>
+            <option value="24">24 saat</option>
+            <option value="48">48 saat</option>
+          </select>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Sabah brifing -->
+        <div class="section-title">🌅 Sabah Brifing</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Günlük Sabah Özeti</div>
+            <div class="notif-sub">Her sabah fiyat, K/Z ve durumun</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifMorning" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Brifing Saati</div>
+            <div class="notif-sub">Sabah brifing kaçta gelsin</div>
+          </div>
+          <input class="notif-time" id="notifMorningHour" type="number" min="0" max="23" value="8" placeholder="08">
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Kâr bildirimleri -->
+        <div class="section-title">📈 Kâr Bildirimleri</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Kâr Bölgesi Bildirimi</div>
+            <div class="notif-sub">Belirlediğin eşiği geçince bildir</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifProfit" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Kâr Eşiği</div>
+            <div class="notif-sub">Bu yüzdenin üzerinde bildirim gelsin</div>
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button class="notif-chip" onclick="setNotifChip('notifProfitPct', 10, this)">%10</button>
+            <button class="notif-chip active" onclick="setNotifChip('notifProfitPct', 20, this)">%20</button>
+            <button class="notif-chip" onclick="setNotifChip('notifProfitPct', 30, this)">%30</button>
+            <button class="notif-chip" onclick="setNotifChip('notifProfitPct', 50, this)">%50</button>
+          </div>
+          <input type="hidden" id="notifProfitPct" value="20">
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Yarı/Yarı Modu Bildirimi</div>
+            <div class="notif-sub">Koşul oluşunca ayrıca bildir</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifHalfMode" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Uzun Süredir Kâra Geçilmedi</div>
+            <div class="notif-sub">X günden uzun süre kâr yoksa uyar</div>
+          </div>
+          <select class="notif-select" id="notifNoProfitDays">
+            <option value="0">Kapalı</option>
+            <option value="30">30 gün</option>
+            <option value="60" selected>60 gün</option>
+            <option value="90">90 gün</option>
+          </select>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Alım bildirimleri -->
+        <div class="section-title">📉 Alım Bildirimleri</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Alım Bölgesi Bildirimi</div>
+            <div class="notif-sub">Düşüş eşiği aşılınca bildir</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifBuy" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Düşüş Eşiği</div>
+            <div class="notif-sub">Bu kadar düşünce bildir</div>
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button class="notif-chip active" onclick="setNotifChip('notifBuyPct', 5, this)">%5</button>
+            <button class="notif-chip" onclick="setNotifChip('notifBuyPct', 10, this)">%10</button>
+            <button class="notif-chip" onclick="setNotifChip('notifBuyPct', 25, this)">%25</button>
+          </div>
+          <input type="hidden" id="notifBuyPct" value="5">
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Alım Miktarını Yaz</div>
+            <div class="notif-sub">Mailde kaç TL alım yapman gerektiğini göster</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifBuyAmount" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Ard Arda 2x %0-10 Koşulu</div>
+            <div class="notif-sub">Yarı/Yarı modu oluşacak zaman bildir</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifConsecutive" checked><span class="notif-slider"></span></label>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Acil uyarılar -->
+        <div class="section-title">🚨 Acil Uyarılar</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Ani Düşüş Uyarısı</div>
+            <div class="notif-sub">24 saatte büyük düşüş olursa</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifCrash" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Düşüş Eşiği</div>
+          </div>
+          <div style="display:flex;gap:5px">
+            <button class="notif-chip" onclick="setNotifChip('notifCrashPct', 10, this)">%10</button>
+            <button class="notif-chip active" onclick="setNotifChip('notifCrashPct', 15, this)">%15</button>
+            <button class="notif-chip" onclick="setNotifChip('notifCrashPct', 20, this)">%20</button>
+          </div>
+          <input type="hidden" id="notifCrashPct" value="15">
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Ani Yükseliş (FOMO) Uyarısı</div>
+            <div class="notif-sub">24 saatte büyük yükseliş olursa</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifFomo" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Yükseliş Eşiği</div>
+          </div>
+          <div style="display:flex;gap:5px">
+            <button class="notif-chip" onclick="setNotifChip('notifFomoPct', 15, this)">%15</button>
+            <button class="notif-chip active" onclick="setNotifChip('notifFomoPct', 20, this)">%20</button>
+            <button class="notif-chip" onclick="setNotifChip('notifFomoPct', 30, this)">%30</button>
+          </div>
+          <input type="hidden" id="notifFomoPct" value="20">
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Yatırım hatırlatma -->
+        <div class="section-title">📅 Yatırım Hatırlatma</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Yatırım Günü Hatırlatma</div>
+            <div class="notif-sub">Seçili günlerde hatırlat</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifInvestDay" checked><span class="notif-slider"></span></label>
+        </div>
+        <div style="margin-bottom:12px">
+          <div class="input-label">Kaç Gün Önce Hatırlat</div>
+          <div style="display:flex;gap:6px">
+            <button class="notif-chip active" onclick="setNotifChip('notifInvestReminder', 1, this)">1 gün</button>
+            <button class="notif-chip" onclick="setNotifChip('notifInvestReminder', 2, this)">2 gün</button>
+            <button class="notif-chip" onclick="setNotifChip('notifInvestReminder', 3, this)">3 gün</button>
+          </div>
+          <input type="hidden" id="notifInvestReminder" value="1">
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Periyodik özetler -->
+        <div class="section-title">📊 Periyodik Özetler</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Haftalık Özet</div>
+            <div class="notif-sub">Her Pazartesi portföy özeti</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifWeekly" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Aylık Özet</div>
+            <div class="notif-sub">Her ayın 1'i detaylı rapor</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifMonthly" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Döngü Tamamlandı</div>
+            <div class="notif-sub">Her satıştan sonra döngü özeti</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifCycle" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Özet Detay Seviyesi</div>
+          </div>
+          <select class="notif-select" id="notifDetail">
+            <option value="short">Kısa</option>
+            <option value="detail" selected>Detaylı</option>
+          </select>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Hedef & dönüm noktaları -->
+        <div class="section-title">🎯 Hedef & Dönüm Noktaları</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Hedefe Yaklaşma</div>
+            <div class="notif-sub">BTC hedefine %80, %90, %100 ulaşınca</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifGoal" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Yıldönümü</div>
+            <div class="notif-sub">Yatırım yolculuğunun yıllık dönümünde</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifAnniv" checked><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Kaçırılan Fırsatlar</div>
+            <div class="notif-sub">"Bu hafta 3 kez alım bölgesi oluştu"</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifMissed" checked><span class="notif-slider"></span></label>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Sessiz mod -->
+        <div class="section-title">🔇 Sessiz Mod</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Sessiz Mod</div>
+            <div class="notif-sub">Belirli tarihe kadar bildirim gönderme</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifSilent" onchange="toggleSilentMode(this)"><span class="notif-slider"></span></label>
+        </div>
+        <div id="silentDateRow" style="display:none;margin-bottom:10px">
+          <label class="input-label">Sessiz Mod Bitiş Tarihi</label>
+          <input class="input-field normal" id="notifSilentUntil" type="date">
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Apps Script URL -->
+        <div style="margin-bottom:12px">
+          <label class="input-label">⚙️ Apps Script URL</label>
+          <input class="input-field normal" id="notifScriptUrl" type="text" placeholder="https://script.google.com/macros/s/...">
+          <div style="font-size:.72rem;color:var(--muted);margin-top:5px">Bildirim gönderecek Apps Script adresi</div>
+        </div>
+
+        <!-- Kaydet & Test -->
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+          <button class="btn btn-teal btn-sm btn-full" onclick="saveNotifSettings()">💾 Ayarları Kaydet</button>
+          <button class="btn btn-ghost btn-sm btn-full" onclick="sendTestNotif()">🧪 Test Maili Gönder</button>
+          <div style="font-size:.72rem;color:var(--muted);text-align:center" id="notifLastSent"></div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Veri -->
     <div class="card always-open">
       <div class="card-header" style="cursor:default">
@@ -1228,6 +1608,7 @@ function switchPage(name, btn) {
   btn.classList.add('active');
   if (name==='charts') { renderCharts(computeState(getTxs())); renderAdvStats(); loadBtcLiveChart(btcCurrentPeriod); }
   if (name==='tools') { fetchFearGreed(); renderKova(); }
+  if (name==='settings') { loadNotifSettings(); }
 }
 
 function toggleCard(id) {
@@ -3020,12 +3401,208 @@ async function buildCycleAnalysis(currentPct, currentPrice, state) {
 }
 
 /* ═══════════════════════════════════════
+   BİLDİRİM AYARLARI
+═══════════════════════════════════════ */
+var notifSettings = JSON.parse(localStorage.getItem('btc_notif') || 'null') || {
+  email:'', freq:30, timeStart:8, timeEnd:22, cooldown:12,
+  morning:true, morningHour:8,
+  profit:true, profitPct:20, halfMode:true, noProfitDays:60,
+  buy:true, buyPct:5, buyAmount:true, consecutive:true,
+  crash:true, crashPct:15, fomo:true, fomoPct:20,
+  investDay:true, investReminder:1,
+  weekly:true, monthly:true, cycle:true, detail:'detail',
+  goal:true, anniv:true, missed:true,
+  silent:false, silentUntil:'',
+  scriptUrl:'',
+};
+
+function loadNotifSettings() {
+  var s = notifSettings;
+  var set = (id, val) => { var el=document.getElementById(id); if(el) el.value = val; };
+  var setChk = (id, val) => { var el=document.getElementById(id); if(el) el.checked = val; };
+  set('notifEmail', s.email);
+  set('notifFreq', s.freq);
+  set('notifTimeStart', s.timeStart);
+  set('notifTimeEnd', s.timeEnd);
+  set('notifCooldown', s.cooldown);
+  setChk('notifMorning', s.morning);
+  set('notifMorningHour', s.morningHour);
+  setChk('notifProfit', s.profit);
+  set('notifProfitPct', s.profitPct);
+  setChk('notifHalfMode', s.halfMode);
+  set('notifNoProfitDays', s.noProfitDays);
+  setChk('notifBuy', s.buy);
+  set('notifBuyPct', s.buyPct);
+  setChk('notifBuyAmount', s.buyAmount);
+  setChk('notifConsecutive', s.consecutive);
+  setChk('notifCrash', s.crash);
+  set('notifCrashPct', s.crashPct);
+  setChk('notifFomo', s.fomo);
+  set('notifFomoPct', s.fomoPct);
+  setChk('notifInvestDay', s.investDay);
+  set('notifInvestReminder', s.investReminder);
+  setChk('notifWeekly', s.weekly);
+  setChk('notifMonthly', s.monthly);
+  setChk('notifCycle', s.cycle);
+  set('notifDetail', s.detail);
+  setChk('notifGoal', s.goal);
+  setChk('notifAnniv', s.anniv);
+  setChk('notifMissed', s.missed);
+  setChk('notifSilent', s.silent);
+  set('notifSilentUntil', s.silentUntil);
+  set('notifScriptUrl', s.scriptUrl || DRIVE_URL);
+  // Chip'leri güncelle
+  updateChips('notifProfitPct', s.profitPct, [10,20,30,50]);
+  updateChips('notifBuyPct', s.buyPct, [5,10,25]);
+  updateChips('notifCrashPct', s.crashPct, [10,15,20]);
+  updateChips('notifFomoPct', s.fomoPct, [15,20,30]);
+  updateChips('notifInvestReminder', s.investReminder, [1,2,3]);
+  if(s.silent) document.getElementById('silentDateRow').style.display = 'block';
+  // Son gönderim zamanı
+  var last = localStorage.getItem('btc_notif_last');
+  if(last) document.getElementById('notifLastSent').textContent = '📡 Son kontrol: '+last;
+}
+
+function updateChips(hiddenId, val, vals) {
+  // Chip butonlarını aktif güncelle
+  var hidden = document.getElementById(hiddenId);
+  if (!hidden) return;
+  // Chip butonlarını bul — hidden input'un yanındakiler
+  var parent = hidden.parentElement;
+  if (!parent) return;
+  parent.querySelectorAll('.notif-chip').forEach((btn, i) => {
+    btn.classList.toggle('active', vals[i] === val);
+  });
+}
+
+function setNotifChip(hiddenId, val, btn) {
+  document.getElementById(hiddenId).value = val;
+  btn.closest('div').querySelectorAll('.notif-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toggleSilentMode(checkbox) {
+  document.getElementById('silentDateRow').style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function saveNotifSettings() {
+  var get = (id) => { var el=document.getElementById(id); return el ? el.value : ''; };
+  var getChk = (id) => { var el=document.getElementById(id); return el ? el.checked : false; };
+  notifSettings = {
+    email: get('notifEmail'),
+    freq: parseInt(get('notifFreq')),
+    timeStart: parseInt(get('notifTimeStart')),
+    timeEnd: parseInt(get('notifTimeEnd')),
+    cooldown: parseInt(get('notifCooldown')),
+    morning: getChk('notifMorning'),
+    morningHour: parseInt(get('notifMorningHour')),
+    profit: getChk('notifProfit'),
+    profitPct: parseInt(get('notifProfitPct')),
+    halfMode: getChk('notifHalfMode'),
+    noProfitDays: parseInt(get('notifNoProfitDays')),
+    buy: getChk('notifBuy'),
+    buyPct: parseInt(get('notifBuyPct')),
+    buyAmount: getChk('notifBuyAmount'),
+    consecutive: getChk('notifConsecutive'),
+    crash: getChk('notifCrash'),
+    crashPct: parseInt(get('notifCrashPct')),
+    fomo: getChk('notifFomo'),
+    fomoPct: parseInt(get('notifFomoPct')),
+    investDay: getChk('notifInvestDay'),
+    investReminder: parseInt(get('notifInvestReminder')),
+    weekly: getChk('notifWeekly'),
+    monthly: getChk('notifMonthly'),
+    cycle: getChk('notifCycle'),
+    detail: get('notifDetail'),
+    goal: getChk('notifGoal'),
+    anniv: getChk('notifAnniv'),
+    missed: getChk('notifMissed'),
+    silent: getChk('notifSilent'),
+    silentUntil: get('notifSilentUntil'),
+    scriptUrl: get('notifScriptUrl'),
+  };
+  localStorage.setItem('btc_notif', JSON.stringify(notifSettings));
+  // Drive'a da kaydet
+  driveSaveNotif();
+  showToast('🔔 Bildirim ayarları kaydedildi!', 'success');
+}
+
+async function driveSaveNotif() {
+  var url = notifSettings.scriptUrl || DRIVE_URL;
+  if (!url) return;
+  try {
+    var state = computeState(getTxs());
+    await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        transactions: allTransactions,
+        portfolios, goal: userGoal,
+        investDay, steps: buySteps,
+        notifSettings,
+        // Anlık durumu da gönder (Apps Script hesaplayabilsin)
+        currentState: {
+          totalInvested: state.totalInvested,
+          totalBtc: state.totalBtc,
+          avgCost: state.avgCost,
+          totalWithdrawn: state.totalWithdrawn,
+          txCount: getTxs().length,
+          cycleHistory,
+        }
+      }),
+      mode:'no-cors'
+    });
+  } catch {}
+}
+
+async function sendTestNotif() {
+  var btn = event.target;
+  btn.textContent = '⏳ Gönderiliyor...'; btn.disabled = true;
+  var url = (document.getElementById('notifScriptUrl').value || DRIVE_URL);
+  if (!url) { showToast('Önce Apps Script URL gir!', 'error'); btn.textContent='🧪 Test Maili Gönder'; btn.disabled=false; return; }
+  var email = document.getElementById('notifEmail').value;
+  if (!email) { showToast('Önce Gmail adresini gir!', 'error'); btn.textContent='🧪 Test Maili Gönder'; btn.disabled=false; return; }
+  try {
+    var state = computeState(getTxs());
+    await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'TEST', email, state: { totalInvested:state.totalInvested, totalBtc:state.totalBtc, avgCost:state.avgCost } }),
+      mode:'no-cors'
+    });
+    showToast('📧 Test maili gönderildi!', 'success');
+    localStorage.setItem('btc_notif_last', new Date().toLocaleString('tr-TR'));
+    document.getElementById('notifLastSent').textContent = '📡 Son test: '+new Date().toLocaleString('tr-TR');
+  } catch(e) {
+    showToast('Bağlantı hatası!', 'error');
+  }
+  btn.textContent='🧪 Test Maili Gönder'; btn.disabled=false;
+}
+
+/* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
 applyTheme();
 renderAll();
 fetchFearGreed();
 startBtcAutoRefresh();
+
+// OneSignal — bildirim izni iste ve Player ID kaydet
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal) {
+  try {
+    var playerId = await OneSignal.getUserId();
+    if (playerId) {
+      localStorage.setItem('btc_onesignal_id', playerId);
+      console.log('OneSignal Player ID:', playerId);
+    }
+    // Bildirim izni yoksa iste
+    var permission = await OneSignal.getNotificationPermission();
+    if (permission === 'default') {
+      setTimeout(() => OneSignal.showSlidedownPrompt(), 3000);
+    }
+  } catch(e) { console.log('OneSignal:', e); }
+});
 
 // Dakikada bir canlı veri güncelle
 setInterval(async () => {
