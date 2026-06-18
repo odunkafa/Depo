@@ -1,0 +1,3076 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d1f35">
+<title>₿ BTC Takip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:      #0d1f35;
+  --card:    #152843;
+  --card2:   #1c3354;
+  --border:  #274666;
+  --gold:    #f7931a;
+  --gold2:   #fdb54e;
+  --teal:    #00d4bc;
+  --red:     #ff5576;
+  --green:   #00f0a0;
+  --blue:    #5b9cf6;
+  --muted:   #6a90b8;
+  --text:    #e8f4ff;
+  --dim:     #7daad0;
+  --nav-h:   64px;
+  --safe-b:  env(safe-area-inset-bottom, 0px);
+}
+body.light-theme {
+  --bg:      #f0f4f8;
+  --card:    #ffffff;
+  --card2:   #e8eef5;
+  --border:  #c8d8e8;
+  --gold:    #d4720a;
+  --gold2:   #e88c1a;
+  --teal:    #008a7a;
+  --red:     #d63355;
+  --green:   #00916a;
+  --blue:    #2563d4;
+  --muted:   #7a95b0;
+  --text:    #1a2e42;
+  --dim:     #4a6a88;
+}
+body.light-theme::before {
+  background:
+    radial-gradient(ellipse at 15% 0%,rgba(212,114,10,.08) 0%,transparent 45%),
+    radial-gradient(ellipse at 85% 85%,rgba(0,138,122,.06) 0%,transparent 45%);
+}
+body.light-theme .app-header { background:rgba(240,244,248,.97); }
+body.light-theme .bottom-nav { background:rgba(240,244,248,.97); }
+body.light-theme .modal-overlay { background:rgba(0,0,0,.5); }
+body.light-theme .toast { box-shadow:0 4px 16px rgba(0,0,0,.15); }
+
+/* Tema toggle butonu */
+.theme-btn {
+  background:var(--card2); border:1px solid var(--border);
+  border-radius:99px; padding:4px 10px;
+  font-size:.8rem; cursor:pointer; transition:.2s;
+  display:flex; align-items:center; gap:4px;
+  color:var(--text); font-family:inherit; font-weight:600;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg); color:var(--text);
+  display:flex; flex-direction:column;
+}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse at 15% 0%,rgba(247,147,26,.13) 0%,transparent 45%),
+    radial-gradient(ellipse at 85% 85%,rgba(0,212,188,.10) 0%,transparent 45%);
+}
+
+/* ── HEADER ── */
+.app-header{
+  background:rgba(13,31,53,.97); border-bottom:1px solid var(--border);
+  backdrop-filter:blur(14px); padding:12px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:relative; z-index:10; flex-shrink:0;
+}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:1rem;}
+.logo-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#f7931a,#ffb347);
+  display:flex;align-items:center;justify-content:center;font-size:.95rem;
+  box-shadow:0 0 12px rgba(247,147,26,.4);flex-shrink:0;
+}
+.logo span{color:var(--gold);}
+.header-right{display:flex;align-items:center;gap:8px;}
+.streak-pill{
+  display:flex;align-items:center;gap:4px;
+  background:var(--card2);border:1px solid var(--border);
+  border-radius:99px;padding:4px 10px;font-size:.75rem;font-weight:700;
+  cursor:pointer;
+}
+.sync-btn{
+  background:var(--card2);border:1px solid var(--border);
+  border-radius:8px;padding:5px 9px;font-size:.75rem;font-weight:600;
+  color:var(--text);cursor:pointer;display:flex;align-items:center;gap:4px;
+  transition:.15s;white-space:nowrap;
+}
+.sync-btn:active{transform:scale(.95);}
+.sync-btn.saving{border-color:var(--teal);color:var(--teal);}
+
+/* ── PAGES ── */
+.pages{flex:1;overflow:hidden;position:relative;z-index:1;}
+.page{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;
+  padding:14px 14px calc(var(--nav-h) + var(--safe-b) + 14px);
+  display:none;
+  -webkit-overflow-scrolling:touch;
+}
+.page.active{display:block;}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--nav-h) + var(--safe-b));
+  padding-bottom:var(--safe-b);
+  background:rgba(13,31,53,.97);border-top:1px solid var(--border);
+  backdrop-filter:blur(14px);
+  display:flex;align-items:stretch;z-index:100;
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;padding:8px 4px;transition:.15s;
+  border:none;background:none;color:var(--muted);font-family:inherit;
+}
+.nav-item.active{color:var(--gold);}
+.nav-item:active{transform:scale(.92);}
+.nav-icon{font-size:1.5rem;line-height:1;}
+.nav-label{font-size:.72rem;font-weight:700;letter-spacing:.3px;}
+
+/* ── CARDS ── */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;margin-bottom:10px;overflow:hidden;
+}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 15px;cursor:pointer;user-select:none;
+  transition:.15s;
+}
+.card-header:active{background:rgba(255,255,255,.03);}
+.card-title{font-weight:700;font-size:1rem;display:flex;align-items:center;gap:7px;}
+.card-arrow{color:var(--muted);font-size:.8rem;transition:transform .2s;}
+.card.open .card-arrow{transform:rotate(180deg);}
+.card-body{display:none;padding:0 15px 15px;}
+.card.open .card-body{display:block;}
+.card.always-open .card-body{display:block;}
+.card.always-open .card-arrow{display:none;}
+
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.stat-tile{
+  background:var(--card2);border:1px solid var(--border);
+  border-radius:11px;padding:11px 12px;cursor:pointer;
+  transition:.15s;position:relative;overflow:hidden;
+}
+.stat-tile::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:11px 11px 0 0;
+}
+.stat-tile.gold::before{background:linear-gradient(90deg,var(--gold),var(--gold2));}
+.stat-tile.teal::before{background:linear-gradient(90deg,var(--teal),#00ffe8);}
+.stat-tile.green::before{background:linear-gradient(90deg,var(--green),#00ffb3);}
+.stat-tile.red::before{background:linear-gradient(90deg,var(--red),#ff88a0);}
+.stat-tile.blue::before{background:linear-gradient(90deg,var(--blue),#93bbff);}
+.stat-tile:active{transform:scale(.97);}
+.tile-label{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.tile-val{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:800;line-height:1.1;}
+.tile-val.gold{color:var(--gold);}
+.tile-val.teal{color:var(--teal);}
+.tile-val.green{color:var(--green);}
+.tile-val.red{color:var(--red);}
+.tile-val.blue{color:var(--blue);}
+.tile-sub{font-size:.72rem;color:var(--dim);margin-top:4px;}
+
+/* ── BUTTONS ── */
+.btn{
+  border:none;cursor:pointer;border-radius:12px;font-family:inherit;
+  font-weight:600;font-size:.92rem;transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;padding:12px 18px;white-space:nowrap;
+}
+.btn:active{transform:scale(.95);}
+.btn-gold{background:linear-gradient(135deg,#f7931a,#d97000);color:#fff;box-shadow:0 3px 12px rgba(247,147,26,.35);}
+.btn-gold:hover{box-shadow:0 4px 20px rgba(247,147,26,.55);}
+.btn-teal{background:linear-gradient(135deg,#00c7b1,#009d8c);color:#fff;box-shadow:0 3px 12px rgba(0,199,177,.3);}
+.btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.btn-danger{background:#1a0810;color:var(--red);border:1px solid #3d1020;}
+.btn-sm{padding:8px 14px;font-size:.84rem;border-radius:9px;}
+.btn-full{width:100%;justify-content:center;}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+
+/* ── INPUT ── */
+.input-label{font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px;display:block;}
+.input-field{
+  background:var(--bg);border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 14px;
+  font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;
+  color:var(--gold);width:100%;outline:none;transition:.18s;
+}
+.input-field:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(247,147,26,.18);}
+.input-field::placeholder{color:var(--muted);font-size:1rem;font-weight:400;}
+.input-field.normal{font-size:1rem;color:var(--text);font-family:'Inter',sans-serif;}
+.row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
+.col{flex:1;min-width:0;}
+
+/* ── LEVEL BAR ── */
+.level-bar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:13px 16px;margin-bottom:10px;
+}
+.level-emoji{font-size:1.7rem;line-height:1;}
+.level-info{flex:1;min-width:0;}
+.level-name{font-size:.98rem;font-weight:800;color:var(--gold);}
+.prog-bg{height:6px;background:var(--bg);border-radius:999px;margin-top:6px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .6s;}
+.xp-txt{font-size:.72rem;color:var(--dim);margin-top:4px;}
+
+/* ── GOAL BAR ── */
+.goal-bar{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:13px 16px;margin-bottom:10px;
+  cursor:pointer;transition:.15s;
+}
+.goal-bar:active{transform:scale(.98);}
+.goal-inner{display:flex;align-items:center;gap:10px;}
+.goal-left{flex:1;min-width:0;}
+.goal-label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;}
+.goal-name{font-size:.95rem;font-weight:700;color:var(--teal);margin-top:2px;}
+.goal-prog-bg{height:5px;background:var(--bg);border-radius:999px;margin-top:6px;overflow:hidden;}
+.goal-prog-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--teal),#00ffe8);transition:width .8s;}
+.goal-pct{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:800;color:var(--teal);}
+
+/* ── ANALYSIS BOX ── */
+.analysis-box{
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:14px;overflow:hidden;display:none;
+  margin-bottom:10px;animation:slideIn .22s ease;
+}
+.analysis-box.visible{display:block;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.analysis-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.03);gap:10px;
+}
+.a-badge{display:flex;align-items:center;gap:9px;}
+.a-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+.a-icon.buy{background:rgba(247,147,26,.22);}
+.a-icon.sell{background:rgba(0,240,160,.18);}
+.a-title{font-size:.95rem;font-weight:800;}
+.a-desc{font-size:.76rem;color:var(--dim);margin-top:2px;}
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--border);}
+.metric{background:var(--card);padding:10px 12px;}
+.metric-label{font-size:.6rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;}
+.metric-val{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:.88rem;}
+.analysis-footer{
+  padding:11px 14px;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;border-top:1px solid var(--border);background:rgba(255,255,255,.025);flex-wrap:wrap;
+}
+.motiv-msg{font-size:.78rem;font-weight:600;color:var(--gold2);flex:1;display:flex;align-items:center;gap:5px;}
+
+/* ── BADGES SUMMARY ── */
+.badges-summary {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:10px 14px; margin-bottom:10px;
+  cursor:pointer; transition:.15s;
+}
+.badges-summary:active { transform:scale(.98); }
+.badges-summary-left { display:flex; align-items:center; gap:4px; font-size:1.15rem; }
+.badges-summary-right { display:flex; align-items:center; gap:3px; font-size:.88rem; }
+
+/* Rozet modal grid */
+.badges-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.badge-card {
+  background:var(--card2); border:1px solid var(--border);
+  border-radius:10px; padding:10px 12px;
+  cursor:pointer; transition:.15s; display:flex; align-items:center; gap:10px;
+}
+.badge-card.earned { border-color:rgba(247,147,26,.4); background:rgba(247,147,26,.07); }
+.badge-card.locked { opacity:.4; }
+.badge-card:active { transform:scale(.96); }
+.badge-card-emoji { font-size:1.5rem; flex-shrink:0; }
+.badge-card-info { min-width:0; }
+.badge-card-name { font-size:.78rem; font-weight:700; color:var(--text); }
+.badge-card-cat { font-size:.62rem; color:var(--muted); margin-top:1px; }
+.badge-category-title {
+  font-size:.7rem; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.8px;
+  margin:12px 0 6px; padding-left:2px;
+}
+
+/* ── CHARTS ── */
+.chart-wrap{position:relative;height:185px;}
+.chart-wrap.sm{height:160px;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:.76rem;}
+thead{background:var(--card2);}
+th{padding:9px 11px;text-align:left;font-weight:700;color:var(--dim);text-transform:uppercase;font-size:.6rem;letter-spacing:.8px;border-bottom:1px solid var(--border);}
+td{padding:9px 11px;border-bottom:1px solid rgba(39,70,102,.5);vertical-align:middle;}
+tbody tr{background:var(--card);transition:.12s;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:active{background:var(--card2);}
+.badge-tx{display:inline-flex;align-items:center;gap:3px;border-radius:5px;padding:2px 6px;font-size:.68rem;font-weight:600;}
+.badge-buy{background:rgba(247,147,26,.14);color:var(--gold);}
+.badge-sell{background:rgba(0,232,150,.13);color:var(--green);}
+.badge-init{background:rgba(58,130,246,.13);color:var(--blue);}
+
+/* ── TOAST ── */
+#toast-container{position:fixed;bottom:calc(var(--nav-h) + 10px);right:12px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
+.toast{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.8rem;font-weight:500;min-width:200px;box-shadow:0 6px 24px rgba(0,0,0,.45);animation:toastIn .25s ease;display:flex;align-items:center;gap:7px;}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.toast.success{border-color:rgba(0,232,150,.4);}
+.toast.warning{border-color:rgba(247,147,26,.4);}
+.toast.error{border-color:rgba(255,77,109,.4);}
+
+/* ── CONFETTI ── */
+.burst{position:fixed;top:0;left:0;pointer-events:none;z-index:9998;}
+
+/* ── MODALS ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.78);
+  display:flex;align-items:center;justify-content:center;
+  z-index:2000;backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:.18s;
+  padding-bottom:calc(var(--nav-h) + var(--safe-b));
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{
+  background:linear-gradient(145deg,var(--card),var(--card2));
+  border:1px solid var(--border);border-radius:20px;
+  padding:26px 22px;max-width:440px;width:92%;
+  transform:scale(.93) translateY(10px);transition:.22s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 20px 60px rgba(0,0,0,.6);position:relative;
+  max-height:80vh;overflow-y:auto;
+}
+.modal-overlay.open .modal{transform:scale(1) translateY(0);}
+.modal-icon{font-size:2.4rem;text-align:center;margin-bottom:10px;}
+.modal-title{font-size:1.2rem;font-weight:800;text-align:center;margin-bottom:6px;}
+.modal-sub{font-size:.88rem;color:var(--dim);text-align:center;margin-bottom:18px;}
+.modal-body{font-size:.9rem;color:var(--text);line-height:1.7;}
+.modal-body ul{padding-left:16px;margin-top:8px;}
+.modal-body li{margin-bottom:6px;}
+.modal-body strong{color:var(--gold);}
+.modal-close{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.07);border:none;color:var(--dim);width:27px;height:27px;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.modal-close:active{background:rgba(255,85,118,.2);color:var(--red);}
+.modal-actions{margin-top:18px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;}
+
+/* ── SAVE SUCCESS MODAL ── */
+.save-modal-hero{font-size:3.2rem;text-align:center;margin-bottom:8px;animation:heroBounce .5s .1s both;}
+@keyframes heroBounce{0%{transform:scale(.3) rotate(-15deg)}70%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
+.save-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.save-stat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;}
+.save-stat-label{font-size:.6rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px;}
+.save-stat-val{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:800;}
+.save-motiv{background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.2);border-radius:9px;padding:10px 13px;font-size:.8rem;font-weight:600;color:var(--gold2);margin-bottom:14px;}
+.save-tip{font-size:.76rem;color:var(--dim);line-height:1.5;padding:0 4px;}
+.save-tip em{color:var(--teal);font-style:normal;font-weight:600;}
+
+/* ── SECTION TITLE ── */
+.section-title{font-weight:700;font-size:.82rem;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin:14px 0 8px;display:flex;align-items:center;gap:6px;}
+
+/* ── MISC ── */
+.mono{font-family:'JetBrains Mono',monospace;}
+.text-green{color:var(--green);}
+.text-red{color:var(--red);}
+.text-gold{color:var(--gold);}
+.text-muted{color:var(--muted);}
+.text-blue{color:var(--blue);}
+.text-teal{color:var(--teal);}
+.divider{height:1px;background:var(--border);margin:12px 0;}
+.empty-state{text-align:center;padding:30px 16px;color:var(--muted);}
+.empty-icon{font-size:2.2rem;margin-bottom:8px;opacity:.35;}
+.empty-title{font-size:.9rem;font-weight:600;color:var(--dim);}
+.empty-desc{font-size:.75rem;margin-top:4px;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── SIMULATOR ── */
+.sim-result{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:10px;}
+.sim-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:.82rem;}
+.sim-row+.sim-row{border-top:1px solid rgba(39,70,102,.4);}
+
+/* ── JOURNAL ── */
+.journal-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:7px;}
+.journal-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.journal-date{font-size:.68rem;color:var(--muted);}
+.journal-note{font-size:.82rem;line-height:1.5;}
+
+/* ── SETTINGS ── */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(39,70,102,.3);}
+.setting-row:last-child{border-bottom:none;}
+.setting-label{font-size:.85rem;font-weight:600;}
+.setting-sub{font-size:.72rem;color:var(--muted);margin-top:2px;}
+.setting-val{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--gold);font-weight:700;}
+.step-inputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;}
+.step-input-wrap{display:flex;flex-direction:column;gap:4px;}
+.step-label{font-size:.62rem;color:var(--muted);font-weight:700;text-transform:uppercase;}
+
+/* ── TAKVİM ── */
+.cal-day {
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border-radius:8px; font-size:.82rem; font-weight:600; cursor:pointer;
+  background:var(--card2); border:1px solid var(--border);
+  color:var(--text); transition:.15s;
+}
+.cal-day:active { transform:scale(.9); }
+.cal-day.selected { background:rgba(0,212,188,.2); border-color:var(--teal); color:var(--teal); font-weight:900; }
+.cal-day.today { border-color:rgba(247,147,26,.5); color:var(--gold); }
+.cal-day.recommended { background:rgba(0,212,188,.06); }
+
+/* ── BTC CANLI GRAFİK ── */
+.period-btn {
+  background:var(--card2); border:1px solid var(--border);
+  border-radius:6px; padding:3px 9px; font-size:.72rem; font-weight:700;
+  color:var(--muted); cursor:pointer; transition:.15s; font-family:inherit;
+}
+.period-btn.active { background:rgba(247,147,26,.15); border-color:var(--gold); color:var(--gold); }
+.period-btn:active { transform:scale(.94); }
+.commentary-box { border-radius:12px; padding:13px 14px; margin-bottom:8px; }
+.commentary-signal { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.commentary-signal-icon { font-size:1.8rem; line-height:1; }
+.commentary-signal-text { flex:1; }
+.commentary-signal-title { font-size:.95rem; font-weight:900; }
+.commentary-signal-sub { font-size:.75rem; margin-top:2px; opacity:.8; }
+.commentary-bull { background:rgba(0,240,160,.08); border:1px solid rgba(0,240,160,.25); color:var(--green); }
+.commentary-bear { background:rgba(255,85,118,.08); border:1px solid rgba(255,85,118,.25); color:var(--red); }
+.commentary-neutral { background:rgba(91,156,246,.08); border:1px solid rgba(91,156,246,.25); color:var(--blue); }
+.commentary-caution { background:rgba(247,147,26,.08); border:1px solid rgba(247,147,26,.25); color:var(--gold); }
+.commentary-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:.8rem; }
+.commentary-row:last-child { border-bottom:none; }
+.commentary-row-label { color:var(--dim); }
+.commentary-row-val { font-weight:700; font-family:'JetBrains Mono',monospace; font-size:.78rem; }
+.commentary-text { font-size:.82rem; line-height:1.7; color:var(--text); margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.06); }
+
+/* ── ANAPARA KOVASI ── */
+.kova-wrap { position:relative; margin-bottom:14px; }
+.kova-svg-wrap { display:flex; justify-content:center; margin-bottom:8px; }
+.kova-info { text-align:center; margin-bottom:12px; }
+.kova-amount { font-family:'JetBrains Mono',monospace; font-size:1.5rem; font-weight:900; color:var(--gold); }
+.kova-pct { font-size:.8rem; color:var(--dim); margin-top:2px; }
+.kova-milestones { display:flex; flex-direction:column; gap:5px; }
+.kova-milestone {
+  display:flex; align-items:center; gap:10px;
+  padding:7px 10px; border-radius:8px;
+  background:var(--card2); border:1px solid var(--border);
+  font-size:.78rem; transition:.15s;
+}
+.kova-milestone.reached { border-color:rgba(247,147,26,.4); background:rgba(247,147,26,.07); }
+.kova-milestone.next { border-color:rgba(0,212,188,.4); background:rgba(0,212,188,.06); }
+.kova-milestone-icon { font-size:1rem; width:20px; text-align:center; flex-shrink:0; }
+.kova-milestone-label { flex:1; font-weight:600; }
+.kova-milestone-val { font-family:'JetBrains Mono',monospace; font-size:.75rem; color:var(--muted); }
+.kova-milestone.reached .kova-milestone-val { color:var(--gold); }
+.kova-milestone.next .kova-milestone-val { color:var(--teal); }
+
+/* ── DÖNGÜ ANALİZİ ── */
+.cycle-band {
+  margin:10px 14px; border-radius:12px; overflow:hidden;
+  border:1px solid var(--border);
+}
+.cycle-band-header {
+  padding:10px 14px; display:flex; align-items:center; gap:8px;
+  font-size:.82rem; font-weight:700; cursor:pointer;
+  background:rgba(255,255,255,.03);
+}
+.cycle-band-body { padding:12px 14px; display:none; }
+.cycle-band.open .cycle-band-body { display:block; }
+.cycle-signal {
+  border-radius:10px; padding:12px 14px; margin-bottom:10px;
+  font-size:.82rem; line-height:1.7;
+}
+.cycle-signal-bull { background:rgba(0,240,160,.08); border:1px solid rgba(0,240,160,.2); }
+.cycle-signal-bear { background:rgba(255,85,118,.08); border:1px solid rgba(255,85,118,.2); }
+.cycle-signal-neutral { background:rgba(91,156,246,.08); border:1px solid rgba(91,156,246,.2); }
+.cycle-signal-wait { background:rgba(247,147,26,.08); border:1px solid rgba(247,147,26,.2); }
+.cycle-signal-title { font-weight:800; font-size:.88rem; margin-bottom:5px; }
+
+/* ── FEAR GREED ── */
+.fg-meter{
+  width:100%;height:12px;border-radius:99px;
+  background:linear-gradient(90deg,#ff5576,#f7931a,#ffd600,#00f0a0);
+  position:relative;margin:10px 0;
+}
+.fg-needle{
+  width:4px;height:20px;background:#fff;border-radius:2px;
+  position:absolute;top:-4px;transform:translateX(-50%);
+  box-shadow:0 0 6px rgba(0,0,0,.5);transition:left .5s;
+}
+.fg-value{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:900;text-align:center;}
+.fg-label{font-size:.85rem;font-weight:700;text-align:center;margin-top:2px;}
+
+/* ── PORTFOLIO TABS (çoklu) ── */
+.ptab-row{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;}
+.ptab{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:6px 12px;font-size:.76rem;font-weight:600;
+  cursor:pointer;white-space:nowrap;transition:.15s;flex-shrink:0;
+}
+.ptab.active{background:rgba(247,147,26,.15);border-color:var(--gold);color:var(--gold);}
+.ptab:active{transform:scale(.95);}
+
+/* countdown */
+.countdown-box{
+  background:linear-gradient(135deg,rgba(0,212,188,.1),rgba(0,212,188,.05));
+  border:1px solid rgba(0,212,188,.3);border-radius:12px;padding:14px;
+  text-align:center;margin-bottom:10px;cursor:pointer;
+}
+.countdown-days{font-family:'JetBrains Mono',monospace;font-size:2.5rem;font-weight:900;color:var(--teal);line-height:1;}
+.countdown-label{font-size:.75rem;color:var(--dim);margin-top:4px;}
+.countdown-date{font-size:.8rem;color:var(--teal);font-weight:600;margin-top:2px;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="logo">
+    <div class="logo-icon">₿</div>
+    <div>Mekanik <span>BTC</span></div>
+  </div>
+  <div class="header-right">
+    <div class="streak-pill" onclick="showModal('streakModal')">
+      🔥 <span id="streakCount">0</span>
+    </div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    <button class="sync-btn" id="driveSaveBtn" onclick="confirmDriveSave()">☁️ Kaydet</button>
+    <button class="sync-btn" id="driveLoadBtn" onclick="confirmDriveLoad()">🔄 Yükle</button>
+  </div>
+</header>
+
+<!-- PAGES -->
+<div class="pages">
+
+  <!-- ══ PAGE: ANA ══ -->
+  <div class="page active" id="page-home">
+
+    <!-- Level -->
+    <div class="level-bar">
+      <div class="level-emoji" id="levelEmoji">🌱</div>
+      <div class="level-info">
+        <div class="level-name" id="levelName">Tohum</div>
+        <div class="prog-bg"><div class="prog-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="xp-txt" id="xpLabel">0 / 5 işlem</div>
+      </div>
+    </div>
+
+    <!-- Countdown -->
+    <div class="countdown-box" id="countdownBox" onclick="buildCalendar();showModal('investDayModal')">
+      <div class="countdown-days" id="countdownDays">—</div>
+      <div class="countdown-label">Sonraki yatırım gününe</div>
+      <div class="countdown-date" id="countdownDate">Yatırım günü belirle →</div>
+    </div>
+
+    <!-- Goal -->
+    <div class="goal-bar" onclick="showModal('goalModal')">
+      <div class="goal-inner">
+        <div class="goal-left">
+          <div class="goal-label">🎯 Hedef</div>
+          <div class="goal-name" id="goalName">Hedef belirle →</div>
+          <div class="goal-prog-bg"><div class="goal-prog-fill" id="goalFill" style="width:0%"></div></div>
+        </div>
+        <div class="goal-pct" id="goalPct">—</div>
+      </div>
+    </div>
+
+    <!-- Badges — kompakt özet -->
+    <div class="badges-summary" onclick="openBadgesModal()" id="badgesSummary">
+      <div class="badges-summary-left">
+        <span id="badgesEarnedIcons"></span>
+      </div>
+      <div class="badges-summary-right">
+        <span id="badgesEarnedCount" style="font-weight:800;color:var(--gold)">0</span>
+        <span style="color:var(--muted)">/</span>
+        <span style="color:var(--muted)">30</span>
+        <span style="font-size:.7rem;color:var(--muted)"> rozet</span>
+        <span style="color:var(--muted);font-size:.8rem;margin-left:4px">›</span>
+      </div>
+    </div>
+
+    <!-- Stat tiles -->
+    <div class="stat-grid">
+      <div class="stat-tile gold" onclick="showInfoModal('totalInvested')">
+        <div class="tile-label">💰 Ana Para</div>
+        <div class="tile-val gold" id="cardTotalInvested">₺0</div>
+        <div class="tile-sub">Toplam yatırılan</div>
+      </div>
+      <div class="stat-tile teal" onclick="showInfoModal('avgCost')">
+        <div class="tile-label">📊 Ort. Maliyet</div>
+        <div class="tile-val teal" id="cardAvgCost">₺0</div>
+        <div class="tile-sub">Ağırlıklı ortalama</div>
+      </div>
+      <div class="stat-tile green" id="cardPLTile" onclick="showInfoModal('pl')">
+        <div class="tile-label">📈 K/Z</div>
+        <div class="tile-val green" id="cardPL">%0,00</div>
+        <div class="tile-sub" id="cardPLSub">Son fiyata göre</div>
+      </div>
+      <div class="stat-tile blue" onclick="showInfoModal('withdrawn')">
+        <div class="tile-label">💸 Çekilen</div>
+        <div class="tile-val blue" id="cardWithdrawn">₺0</div>
+        <div class="tile-sub">Realize kâr</div>
+      </div>
+      <div class="stat-tile gold" onclick="showInfoModal('btcTotal')">
+        <div class="tile-label">🪙 BTC</div>
+        <div class="tile-val gold" id="cardBtcTotal">0.00000000</div>
+        <div class="tile-sub">Elindeki BTC</div>
+      </div>
+      <div class="stat-tile teal" onclick="showInfoModal('portfoyDeger')">
+        <div class="tile-label">📊 Gerç. K/Z <button id="portRefreshBtn" onclick="event.stopPropagation();refreshPortfoyDeger()" style="background:rgba(0,212,188,.15);border:1px solid rgba(0,212,188,.3);border-radius:5px;color:var(--teal);font-size:.65rem;padding:1px 5px;cursor:pointer;margin-left:3px;font-weight:700">↻</button></div>
+        <div class="tile-val teal" id="cardPortfoyDeger">₺0</div>
+        <div class="tile-sub" id="cardPortfoyDegerSub">Son işlem fiyatına göre</div>
+      </div>
+    </div>
+
+    <!-- Fiyat girişi -->
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">🔍 Fiyat Analizi</div>
+      </div>
+      <div class="card-body">
+        <div class="row" style="margin-bottom:10px">
+          <div class="col">
+            <label class="input-label">Bitcoin Fiyatı (₺)</label>
+            <input class="input-field" id="priceInput" type="text" placeholder="örn: 3.500.000"
+              oninput="formatPrice(this)" onkeydown="if(event.key==='Enter') analyzePrice()">
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" id="liveBtn" onclick="fetchLivePrice()">
+            <span id="liveBtnIcon">📡</span> Canlı
+          </button>
+          <button class="btn btn-gold" onclick="analyzePrice()" style="flex:1;justify-content:center">
+            🔍 Analiz Et
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analiz sonucu -->
+    <div class="analysis-box" id="analysisBox">
+      <!-- Mod durumu bandı -->
+      <div id="modeBand" style="display:none;padding:8px 14px;border-bottom:1px solid var(--border);font-size:.76rem;font-weight:600;display:flex;align-items:center;gap:7px"></div>
+      <div class="analysis-top">
+        <div class="a-badge">
+          <div class="a-icon" id="analysisIcon">⚡</div>
+          <div>
+            <div class="a-title" id="analysisTitle">—</div>
+            <div class="a-desc" id="analysisDesc">—</div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('analysisBox').classList.remove('visible')" style="background:rgba(255,255,255,.07);border:none;color:var(--muted);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+      </div>
+      <div class="metrics-grid" id="analysisGrid"></div>
+      <!-- Satış detayı (yarı/yarı modunda gösterilir) -->
+      <div id="sellDetailBand" style="display:none;padding:10px 14px;border-top:1px solid var(--border);font-size:.8rem;line-height:1.6"></div>
+      <!-- Satış döngü analizi (satış modunda gösterilir) -->
+      <div class="cycle-band" id="cycleBand" style="display:none;margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none">
+        <div class="cycle-band-header" onclick="this.parentElement.classList.toggle('open')">
+          <span>🔮</span><span>Bekle mi Sat mı? — Döngü Analizi</span>
+          <span style="margin-left:auto;color:var(--muted);font-size:.75rem">▼</span>
+        </div>
+        <div class="cycle-band-body" id="cycleBandBody"></div>
+      </div>
+      <div class="analysis-footer">
+        <div class="motiv-msg" id="motivationBanner"></div>
+        <button class="btn btn-teal btn-sm" onclick="saveTransaction()" id="saveBtn" disabled>
+          💾 Kaydet
+        </button>
+      </div>
+    </div>
+
+    <!-- İşlem geçmişi -->
+    <div class="card" id="txCard">
+      <div class="card-header" onclick="toggleCard('txCard')">
+        <div class="card-title">📋 İşlem Geçmişi</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body" style="padding:0 0 12px">
+        <div class="table-wrap" style="margin:0 -1px">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Tarih</th><th>Fiyat</th><th>K/Z</th>
+                <th>Tür</th><th>Tutar</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody">
+              <tr><td colspan="7"><div class="empty-state">
+                <div class="empty-icon">₿</div>
+                <div class="empty-title">Henüz işlem yok</div>
+                <div class="empty-desc">Fiyat gir → Analiz Et → Kaydet</div>
+              </div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-home -->
+
+  <!-- ══ PAGE: GRAFİKLER ══ -->
+  <div class="page" id="page-charts">
+
+    <!-- ₿ CANLI BTC GRAFİĞİ -->
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">₿ Bitcoin Fiyat Grafiği
+          <span id="btcLivePrice" style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--gold);margin-left:6px"></span>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="period-btn active" onclick="setBtcPeriod(7,this)">7G</button>
+          <button class="period-btn" onclick="setBtcPeriod(30,this)">30G</button>
+          <button class="period-btn" onclick="setBtcPeriod(90,this)">90G</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding-top:6px">
+        <div id="btcChartLoading" style="text-align:center;padding:30px;color:var(--muted);font-size:.82rem">📡 Veri yükleniyor...</div>
+        <div id="btcChartWrap" style="display:none">
+          <div style="position:relative;height:220px"><canvas id="btcLiveChart"></canvas></div>
+          <!-- Yorum bölümü -->
+          <div id="btcCommentary" style="margin-top:12px"></div>
+        </div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:6px;text-align:right" id="btcChartUpdated"></div>
+      </div>
+    </div>
+
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">🧩 Sermaye Dağılımı</div>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap sm"><canvas id="pieChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">💰 Alım Geçmişi</div>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap sm"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card always-open" id="monthlyChartCard">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">📅 Aylık Yatırım</div>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap sm"><canvas id="monthlyChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Gelişmiş istatistikler -->
+    <div class="card" id="advStatsCard">
+      <div class="card-header" onclick="toggleCard('advStatsCard');renderAdvStats()">
+        <div class="card-title">📊 Gelişmiş İstatistikler</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body" id="advStatsBody"></div>
+    </div>
+
+  </div><!-- /page-charts -->
+
+  <!-- ══ PAGE: ARAÇLAR ══ -->
+  <div class="page" id="page-tools">
+
+    <!-- ANAPARA KOVASI -->
+    <div class="card always-open" id="anaparaKovasiCard">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">🪣 Anapara Kovası</div>
+      </div>
+      <div class="card-body">
+        <div id="kovaContainer"></div>
+      </div>
+    </div>
+    <div class="card" id="fgCard">
+      <div class="card-header" onclick="toggleCard('fgCard')">
+        <div class="card-title">🌡️ Piyasa Ruh Hali</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="fg-value" id="fgValue">—</div>
+        <div class="fg-label" id="fgLabel">Yükleniyor...</div>
+        <div class="fg-meter"><div class="fg-needle" id="fgNeedle" style="left:50%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted)">
+          <span>Aşırı Korku</span><span>Nötr</span><span>Aşırı Açgözlülük</span>
+        </div>
+        <div style="margin-top:10px;font-size:.78rem;color:var(--dim);line-height:1.5" id="fgAdvice"></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="fetchFearGreed()">🔄 Güncelle</button>
+      </div>
+    </div>
+
+    <!-- Senaryo -->
+    <div class="card" id="scenarioCard">
+      <div class="card-header" onclick="toggleCard('scenarioCard')">
+        <div class="card-title">🔮 Senaryo Simülatörü</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body">
+        <label class="input-label">BTC Hedef Fiyatı (₺)</label>
+        <input class="input-field" id="scenarioPrice" type="text" placeholder="örn: 5.000.000" oninput="formatPrice(this)" style="margin-bottom:10px">
+        <button class="btn btn-ghost btn-sm btn-full" onclick="runScenario()">Hesapla</button>
+        <div id="scenarioResult"></div>
+      </div>
+    </div>
+
+    <!-- Kriz -->
+    <div class="card" id="crisisCard">
+      <div class="card-header" onclick="toggleCard('crisisCard')">
+        <div class="card-title">📉 Kriz Simülatörü</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body">
+        <label class="input-label">Düşüş Yüzdesi (%)</label>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="runCrisis(20)">-%20</button>
+          <button class="btn btn-ghost btn-sm" onclick="runCrisis(40)">-%40</button>
+          <button class="btn btn-ghost btn-sm" onclick="runCrisis(50)">-%50</button>
+          <button class="btn btn-ghost btn-sm" onclick="runCrisis(70)">-%70</button>
+          <button class="btn btn-ghost btn-sm" onclick="runCrisis(80)">-%80</button>
+        </div>
+        <div id="crisisResult"></div>
+      </div>
+    </div>
+
+    <!-- Emeklilik -->
+    <div class="card" id="retirementCard">
+      <div class="card-header" onclick="toggleCard('retirementCard')">
+        <div class="card-title">🏖️ Emeklilik Hesaplayıcı</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body">
+        <div class="row" style="margin-bottom:8px">
+          <div class="col">
+            <label class="input-label">Aylık Yatırım (₺)</label>
+            <input class="input-field normal" id="retMonthly" type="number" placeholder="20000">
+          </div>
+          <div class="col">
+            <label class="input-label">Süre (Yıl)</label>
+            <input class="input-field normal" id="retYears" type="number" placeholder="10">
+          </div>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="col">
+            <label class="input-label">Yıllık Büyüme (%)</label>
+            <input class="input-field normal" id="retGrowth" type="number" placeholder="30">
+          </div>
+          <div class="col">
+            <label class="input-label">Anlık BTC Fiyatı (₺)</label>
+            <input class="input-field normal" id="retBtcPrice" type="text" placeholder="3.500.000" oninput="formatPrice(this)">
+          </div>
+        </div>
+        <button class="btn btn-gold btn-full btn-sm" onclick="runRetirement()">🚀 Hesapla</button>
+        <div id="retirementResult"></div>
+      </div>
+    </div>
+
+    <!-- Ya olsaydı -->
+    <div class="card" id="whatifCard">
+      <div class="card-header" onclick="toggleCard('whatifCard')">
+        <div class="card-title">⏰ "Ya Olsaydı" Makinesi</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body">
+        <label class="input-label">Başlangıç Yılı</label>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="runWhatIf(2020,10000)">2020</button>
+          <button class="btn btn-ghost btn-sm" onclick="runWhatIf(2021,10000)">2021</button>
+          <button class="btn btn-ghost btn-sm" onclick="runWhatIf(2022,10000)">2022</button>
+          <button class="btn btn-ghost btn-sm" onclick="runWhatIf(2023,10000)">2023</button>
+        </div>
+        <label class="input-label">Aylık Yatırım (₺)</label>
+        <input class="input-field normal" id="whatifAmount" type="number" placeholder="10000" style="margin-bottom:10px">
+        <div id="whatifResult"></div>
+      </div>
+    </div>
+
+  </div><!-- /page-tools -->
+
+  <!-- ══ PAGE: AYARLAR ══ -->
+  <div class="page" id="page-settings">
+
+    <!-- Alım Adımları -->
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">⚙️ Alım Adımları</div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:.78rem;color:var(--dim);margin-bottom:10px;line-height:1.5">
+          Fiyat düşüşüne göre kaç TL alım yapılacak? Değerleri kendin belirle.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div>
+            <div class="step-label">0% — -10%</div>
+            <input class="input-field normal" id="step1" type="number" placeholder="20000">
+          </div>
+          <div>
+            <div class="step-label">-10% — -25%</div>
+            <input class="input-field normal" id="step2" type="number" placeholder="30000">
+          </div>
+          <div>
+            <div class="step-label">-25% ve altı</div>
+            <input class="input-field normal" id="step3" type="number" placeholder="40000">
+          </div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:6px">İlk alım (başlangıç):</div>
+        <input class="input-field normal" id="stepInit" type="number" placeholder="20000" style="margin-top:4px">
+        <button class="btn btn-teal btn-sm" style="margin-top:10px" onclick="saveSteps()">💾 Adımları Kaydet</button>
+        <div id="stepsPreview" style="margin-top:10px;font-size:.78rem;color:var(--dim)"></div>
+      </div>
+    </div>
+
+    <!-- Veri -->
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">📦 Veri Yönetimi</div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-ghost btn-sm btn-full" onclick="exportData()">⬇️ JSON Dışa Aktar</button>
+          <button class="btn btn-ghost btn-sm btn-full" onclick="document.getElementById('importFile').click()">⬆️ JSON İçe Aktar</button>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+          <button class="btn btn-ghost btn-sm btn-full" onclick="openGmailExport()">📧 Gmail ile Paylaş</button>
+          <button class="btn btn-danger btn-sm btn-full" onclick="confirmReset()">🗑️ Tüm Veriyi Sıfırla</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ana ekran -->
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">📱 Ana Ekrana Ekle</div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:.8rem;color:var(--dim);line-height:1.7">
+          Bu uygulamayı telefon ana ekranına kısayol olarak ekleyebilirsin — tam ekran uygulama gibi açılır!<br><br>
+          <strong style="color:var(--text)">iPhone/Safari:</strong> Paylaş butonu → "Ana Ekrana Ekle"<br>
+          <strong style="color:var(--text)">Android/Chrome:</strong> 3 nokta menü → "Ana ekrana ekle"
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-settings -->
+
+</div><!-- /pages -->
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="switchPage('home',this)">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Ana Sayfa</span>
+  </button>
+  <button class="nav-item" onclick="switchPage('charts',this)">
+    <span class="nav-icon">📈</span>
+    <span class="nav-label">Grafikler</span>
+  </button>
+  <button class="nav-item" onclick="switchPage('tools',this)">
+    <span class="nav-icon">🔮</span>
+    <span class="nav-label">Araçlar</span>
+  </button>
+  <button class="nav-item" onclick="switchPage('settings',this)">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">Ayarlar</span>
+  </button>
+</nav>
+
+<div id="toast-container"></div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Info Modal -->
+<div class="modal-overlay" id="infoModal" onclick="if(event.target===this)closeModal('infoModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('infoModal')">✕</button>
+    <div class="modal-icon" id="infoIcon">📊</div>
+    <div class="modal-title" id="infoTitle"></div>
+    <div class="modal-sub" id="infoSub"></div>
+    <div class="modal-body" id="infoBody"></div>
+    <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('infoModal')">Tamam</button></div>
+  </div>
+</div>
+
+<!-- Save Modal -->
+<div class="modal-overlay" id="saveModal" onclick="if(event.target===this)closeModal('saveModal')">
+  <div class="modal" style="text-align:center">
+    <button class="modal-close" onclick="closeModal('saveModal')">✕</button>
+    <div class="save-modal-hero" id="saveHero">🎉</div>
+    <div class="modal-title" id="saveTitle"></div>
+    <div class="modal-sub" id="saveSub"></div>
+    <div class="save-stats" id="saveStats"></div>
+    <div class="save-motiv" id="saveMotiv"></div>
+    <div class="save-tip" id="saveTip"></div>
+    <div class="modal-actions"><button class="btn btn-gold" onclick="closeModal('saveModal')">🚀 Devam Et</button></div>
+  </div>
+</div>
+
+<!-- Goal Modal -->
+<div class="modal-overlay" id="goalModal" onclick="if(event.target===this)closeModal('goalModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('goalModal')">✕</button>
+    <div class="modal-icon">🎯</div>
+    <div class="modal-title">Hedef Belirle</div>
+    <div class="modal-sub">Ne kadar BTC biriktirmek istiyorsun?</div>
+    <div class="modal-body">
+      <label class="input-label">Hedef Adı</label>
+      <input class="input-field normal" id="goalNameInput" placeholder="örn: 0.1 BTC Hedefim" style="margin-bottom:10px">
+      <label class="input-label">Hedef BTC</label>
+      <input class="input-field normal" id="goalBtcInput" placeholder="örn: 0.1" style="margin-bottom:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="setQuickGoal(0.01)">0.01</button>
+        <button class="btn btn-ghost btn-sm" onclick="setQuickGoal(0.05)">0.05</button>
+        <button class="btn btn-ghost btn-sm" onclick="setQuickGoal(0.1)">0.1</button>
+        <button class="btn btn-ghost btn-sm" onclick="setQuickGoal(0.5)">0.5</button>
+        <button class="btn btn-ghost btn-sm" onclick="setQuickGoal(1)">1 BTC 🏆</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('goalModal')">İptal</button>
+      <button class="btn btn-teal btn-sm" onclick="saveGoal()">💾 Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invest Day Modal -->
+<div class="modal-overlay" id="investDayModal" onclick="if(event.target===this)closeModal('investDayModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('investDayModal')">✕</button>
+    <div class="modal-icon">📅</div>
+    <div class="modal-title">Yatırım Günü</div>
+    <div class="modal-sub">Her ay hangi gün yatırım yapıyorsun?</div>
+    <div class="modal-body">
+      <!-- Mini takvim -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:10px">
+        <div style="text-align:center;font-size:.62rem;color:var(--muted);font-weight:700;padding:3px">Pt</div>
+        <div style="text-align:center;font-size:.62rem;color:var(--muted);font-weight:700;padding:3px">Sa</div>
+        <div style="text-align:center;font-size:.62rem;color:var(--muted);font-weight:700;padding:3px">Ça</div>
+        <div style="text-align:center;font-size:.62rem;color:var(--muted);font-weight:700;padding:3px">Pe</div>
+        <div style="text-align:center;font-size:.62rem;color:var(--muted);font-weight:700;padding:3px">Cu</div>
+        <div style="text-align:center;font-size:.62rem;color:var(--muted);font-weight:700;padding:3px">Ct</div>
+        <div style="text-align:center;font-size:.62rem;color:var(--muted);font-weight:700;padding:3px">Pz</div>
+      </div>
+      <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px"></div>
+      <div style="margin-top:12px;text-align:center;font-size:.82rem;color:var(--dim)">
+        Seçilen: <strong id="selectedDayLabel" style="color:var(--teal)">—</strong>
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:6px;text-align:center">
+        29-31 arası günler her ayda olmayabilir, 1-28 arası önerilir.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('investDayModal')">İptal</button>
+      <button class="btn btn-teal btn-sm" onclick="saveInvestDay()" id="investDaySaveBtn" disabled>💾 Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal" onclick="if(event.target===this)closeModal('deleteModal')">
+  <div class="modal">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">İşlemi Sil</div>
+    <div class="modal-sub" id="deleteDesc"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('deleteModal')">İptal</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmDeleteTx()">Evet, Sil</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Modal -->
+<div class="modal-overlay" id="resetModal" onclick="if(event.target===this)closeModal('resetModal')">
+  <div class="modal">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">Tüm Veriyi Sıfırla</div>
+    <div class="modal-sub">Tüm işlem geçmişi kalıcı olarak silinecek!</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('resetModal')">İptal</button>
+      <button class="btn btn-danger btn-sm" onclick="resetAll()">Evet, Sıfırla</button>
+    </div>
+  </div>
+</div>
+
+<!-- Streak Modal -->
+<div class="modal-overlay" id="streakModal" onclick="if(event.target===this)closeModal('streakModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('streakModal')">✕</button>
+    <div class="modal-icon">🔥</div>
+    <div class="modal-title" id="streakModalTitle">İşlem İstatistikleri</div>
+    <div class="modal-body" id="streakModalBody"></div>
+    <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="closeModal('streakModal')">Kapat</button></div>
+  </div>
+</div>
+
+<!-- Drive Save Confirm Modal -->
+<div class="modal-overlay" id="driveSaveConfirmModal" onclick="if(event.target===this)closeModal('driveSaveConfirmModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('driveSaveConfirmModal')">✕</button>
+    <div class="modal-icon">☁️</div>
+    <div class="modal-title">Drive'a Kaydet</div>
+    <div class="modal-sub" id="driveSaveConfirmSub"></div>
+    <div class="modal-body" style="text-align:center">
+      <div style="background:rgba(247,147,26,.08);border:1px solid rgba(247,147,26,.2);border-radius:10px;padding:12px;font-size:.8rem;color:var(--dim);line-height:1.6">
+        ⚠️ Drive'daki mevcut yedek <strong style="color:var(--gold)">üzerine yazılacak.</strong><br>Emin misin?
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('driveSaveConfirmModal')">İptal</button>
+      <button class="btn btn-teal btn-sm" onclick="closeModal('driveSaveConfirmModal');driveSaveConfirmed()">☁️ Evet, Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Drive Load Confirm Modal -->
+<div class="modal-overlay" id="driveLoadConfirmModal" onclick="if(event.target===this)closeModal('driveLoadConfirmModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('driveLoadConfirmModal')">✕</button>
+    <div class="modal-icon">🔄</div>
+    <div class="modal-title">Drive'dan Yükle</div>
+    <div class="modal-sub">Drive'daki veriyi bu cihaza yükle</div>
+    <div class="modal-body" style="text-align:center">
+      <div style="background:rgba(255,85,118,.08);border:1px solid rgba(255,85,118,.2);border-radius:10px;padding:12px;font-size:.8rem;color:var(--dim);line-height:1.6">
+        ⚠️ Cihazdaki mevcut veriler <strong style="color:var(--red)">Drive'daki veriyle değiştirilecek.</strong><br>Kaydedilmemiş değişiklikler kaybolur. Emin misin?
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('driveLoadConfirmModal')">İptal</button>
+      <button class="btn btn-danger btn-sm" onclick="closeModal('driveLoadConfirmModal');driveLoadConfirmed()">🔄 Evet, Yükle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Badges Modal -->
+<div class="modal-overlay" id="badgesModal" onclick="if(event.target===this)closeModal('badgesModal')">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeModal('badgesModal')">✕</button>
+    <div class="modal-icon">🏆</div>
+    <div class="modal-title">Başarımlar</div>
+    <div class="modal-sub" id="badgesModalSub"></div>
+    <div id="badgesModalContent" style="max-height:55vh;overflow-y:auto;padding-right:4px"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="gmailModal" onclick="if(event.target===this)closeModal('gmailModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('gmailModal')">✕</button>
+    <div class="modal-icon">📧</div>
+    <div class="modal-title">Gmail ile Paylaş</div>
+    <div class="modal-sub" id="gmailSub"></div>
+    <div class="modal-body" id="gmailBody"></div>
+    <div class="modal-actions" id="gmailActions"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+var DRIVE_URL = 'https://script.google.com/macros/s/AKfycbw4_0IV28VM4ZyebJuUOvh9nu4HYT_-49YhPrB4cXyJ0L2RVgsSNI6ubTxEtF6o2RLJ/exec';
+
+// Multi-portfolio
+var portfolios = JSON.parse(localStorage.getItem('btc_portfolios') || 'null') || [{id:'default', name:'Ana Portföy'}];
+var activePortfolioId = localStorage.getItem('btc_active_portfolio') || 'default';
+var allTransactions = JSON.parse(localStorage.getItem('btc_all_txs') || 'null') || {};
+
+// migrate old data
+if (!allTransactions['default']) {
+  var old = JSON.parse(localStorage.getItem('btc_txs') || '[]');
+  allTransactions['default'] = old;
+}
+
+function getTxs() { return allTransactions[activePortfolioId] || []; }
+function setTxs(arr) { allTransactions[activePortfolioId] = arr; }
+
+var lastAnalysis = null;
+var deletePendingIndex = null;
+var priceChartInst = null, pieChartInst = null, barChartInst = null, monthlyChartInst = null;
+var userGoal  = JSON.parse(localStorage.getItem('btc_goal') || 'null');
+var investDay = parseInt(localStorage.getItem('btc_invest_day') || '0');
+var journalEntries = JSON.parse(localStorage.getItem('btc_journal') || '[]');
+var earnedBadges = JSON.parse(localStorage.getItem('btc_badges') || '[]');
+var buySteps = JSON.parse(localStorage.getItem('btc_steps') || 'null') || {s1:20000,s2:30000,s3:40000,init:20000};
+
+/* ═══════════════════════════════════════
+   LEVELS & MOTIVATIONS
+═══════════════════════════════════════ */
+var LEVELS = [
+  {name:'Tohum',emoji:'🌱',min:0,max:5},
+  {name:'Filiz',emoji:'🌿',min:5,max:10},
+  {name:'Büyüyen',emoji:'🌳',min:10,max:20},
+  {name:'Deneyimli',emoji:'💎',min:20,max:35},
+  {name:'Usta',emoji:'🏆',min:35,max:50},
+  {name:'Efsane',emoji:'🚀',min:50,max:Infinity},
+];
+var MOTIVATIONS = {
+  buy:['💪 Düşüş fırsat — disiplin kazandırır!','📉 Her dip, ortalama maliyetini düşürür!','🎯 Mekanik çalışıyor — kurala uyu!','⚡ Düşüşten korkmayan, yükselişi yaşar!','🔥 DCA prensibini uyguluyorsun!'],
+  sell:['🎉 Kâr realize etmek disiplinin ödülü!','💸 Ana sermaye korunuyor, kâr cebine!','🏆 Sadece kârı çek, pozisyonu koru!','✨ Kazancını realize et, dibe hazırlan!','🌟 İşte mekanik güzelliği — kâr cepte!'],
+};
+
+/* ═══════════════════════════════════════
+   FORMAT
+═══════════════════════════════════════ */
+function fmt(n,dec=0){ if(n===null||n===undefined||isNaN(n))return '—'; return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n); }
+function fmtCur(n,dec=0){ return '₺'+fmt(n,dec); }
+function fmtBtc(n){ return (n||0).toFixed(8); }
+function formatPrice(el){ let r=el.value.replace(/[^0-9]/g,''); if(!r){el.value='';return;} el.value=new Intl.NumberFormat('tr-TR').format(parseInt(r)); }
+function parsePrice(s){ return parseFloat((s||'').replace(/\./g,'').replace(',','.')) || 0; }
+
+/* ═══════════════════════════════════════
+   PAGE NAVIGATION
+═══════════════════════════════════════ */
+function switchPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name==='charts') { renderCharts(computeState(getTxs())); renderAdvStats(); loadBtcLiveChart(btcCurrentPeriod); }
+  if (name==='tools') { fetchFearGreed(); renderKova(); }
+}
+
+function toggleCard(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+/* ═══════════════════════════════════════
+   MODALS
+═══════════════════════════════════════ */
+function showModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function confirmReset() { showModal('resetModal'); }
+function resetAll() {
+  setTxs([]);
+  earnedBadges = [];
+  journalEntries = [];
+  cycleHistory = [];
+  localStorage.removeItem('btc_badges');
+  localStorage.removeItem('btc_journal');
+  localStorage.removeItem('btc_cycles');
+  localStorage.removeItem('btc_extra_invested');
+  saveLocal();
+  renderAll();
+  closeModal('resetModal');
+  lastAnalysis = null;
+  document.getElementById('saveBtn').disabled = true;
+  document.getElementById('analysisBox').classList.remove('visible');
+  showToast('♻️ Tüm veriler sıfırlandı.','warning');
+}
+
+/* ═══════════════════════════════════════
+   LIVE PRICE
+═══════════════════════════════════════ */
+async function fetchLivePrice() {
+  var btn=document.getElementById('liveBtn');
+  var icon=document.getElementById('liveBtnIcon');
+  icon.textContent='⏳'; btn.disabled=true;
+  try {
+    var res=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=try');
+    var data=await res.json();
+    var price=data?.bitcoin?.try;
+    if(!price) throw new Error();
+    document.getElementById('priceInput').value=new Intl.NumberFormat('tr-TR').format(price);
+    // fill retirement field too
+    document.getElementById('retBtcPrice').value=new Intl.NumberFormat('tr-TR').format(price);
+    showToast('📡 Canlı fiyat: '+fmtCur(price),'success');
+    icon.textContent='✅';
+    setTimeout(()=>{icon.textContent='📡';btn.disabled=false;},2000);
+  } catch {
+    showToast('Fiyat alınamadı.','error');
+    icon.textContent='❌';
+    setTimeout(()=>{icon.textContent='📡';btn.disabled=false;},2000);
+  }
+}
+
+async function getLiveBtcTry() {
+  var res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=try');
+  var data = await res.json();
+  return data?.bitcoin?.try || null;
+}
+
+async function refreshPortfoyDeger() {
+  var btn = document.getElementById('portRefreshBtn');
+  btn.textContent = '⏳'; btn.disabled = true;
+  try {
+    var price = await getLiveBtcTry();
+    if (!price) throw new Error();
+    var state = computeState(getTxs());
+    var txs = getTxs();
+
+    // 1. Gerç. K/Z kartı
+    var portVal = state.totalBtc * price;
+    var unrealizedKZ = portVal - state.totalInvested;
+    var kzCard = document.getElementById('cardPortfoyDeger');
+    kzCard.textContent = (unrealizedKZ>=0?'+':'')+fmtCur(unrealizedKZ, 0);
+    kzCard.className = 'tile-val mono ' + (unrealizedKZ>=0?'teal':'red');
+    document.getElementById('cardPortfoyDegerSub').textContent = '📡 Canlı · ' + fmtCur(price, 0);
+
+    // 2. K/Z kartı — aynı canlı fiyatla
+    if (state.avgCost) {
+      var pct = ((price - state.avgCost) / state.avgCost) * 100;
+      var kzEl = document.getElementById('cardPL');
+      kzEl.textContent = (pct >= 0 ? '+' : '') + fmt(pct, 2) + '%';
+      kzEl.className = 'tile-val mono ' + (pct >= 0 ? 'green' : 'red');
+      document.getElementById('cardPLSub').textContent = '📡 Canlı · ' + fmtCur(price, 0);
+    }
+
+    // 3. Gelişmiş istatistikler — aynı canlı fiyatla
+    if (txs.length) {
+      var unrealized = state.totalBtc * price - state.totalInvested;
+      var advEl = document.getElementById('advStatsUnrealized');
+      if (advEl) {
+        advEl.textContent = (unrealized >= 0 ? '+' : '') + fmtCur(unrealized, 0);
+        advEl.className = unrealized >= 0 ? 'text-green mono' : 'text-red mono';
+      }
+      var priceEl = document.getElementById('advStatslivePrice');
+      if (priceEl) priceEl.textContent = '📡 ' + fmtCur(price, 0);
+    }
+
+    btn.textContent = '✅';
+    setTimeout(() => { btn.textContent = '↻'; btn.disabled = false; }, 2500);
+    showToast('📡 Canlı fiyatla güncellendi: ' + fmtCur(price, 0), 'success');
+  } catch {
+    showToast('Fiyat alınamadı.', 'error');
+    btn.textContent = '↻'; btn.disabled = false;
+  }
+}
+
+async function refreshAdvStatsLive() {
+  // Port. Değer yenile butonuyla aynı fonksiyonu kullan — tutarlı olsun
+  try {
+    var price = await getLiveBtcTry();
+    if (!price) return;
+    var state = computeState(getTxs());
+    var txs = getTxs();
+    if (!txs.length) return;
+    var unrealized = state.totalBtc * price - state.totalInvested;
+    var el = document.getElementById('advStatsUnrealized');
+    if (el) {
+      el.textContent = (unrealized >= 0 ? '+' : '') + fmtCur(unrealized, 0);
+      el.className = unrealized >= 0 ? 'text-green mono' : 'text-red mono';
+    }
+    var elPrice = document.getElementById('advStatslivePrice');
+    if (elPrice) elPrice.textContent = '📡 ' + fmtCur(price, 0);
+  } catch { /* sessiz hata */ }
+}
+
+/* ═══════════════════════════════════════
+   COMPUTE STATE
+═══════════════════════════════════════ */
+function computeState(txList) {
+  var totalInvested=0,totalBtc=0,totalWithdrawn=0;
+  for(var tx of txList){
+    if(tx.type==='BUY'||tx.type==='INIT'){
+      totalInvested+=tx.amount; totalBtc+=tx.btcAmount;
+    } else if(tx.type==='SELL'){
+      totalBtc-=tx.btcAmount;
+      totalWithdrawn+=tx.amount;
+      // HALF modunda anaparaya eklenen miktar
+      if(tx.anaparaEkleme) totalInvested+=tx.anaparaEkleme;
+    }
+  }
+  var avgCost=totalBtc>0?totalInvested/totalBtc:0;
+  return {totalInvested,totalBtc,totalWithdrawn,avgCost};
+}
+
+/* ═══════════════════════════════════════
+   ANALYZE
+═══════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   MEKANİZMA TESPİTİ
+═══════════════════════════════════════ */
+function detectSellMode(txs) {
+  /*
+    Döner: 'FULL' veya 'HALF'
+    HALF koşulları:
+    1. Son satıştan bu yana ard arda en az 2 alım %0-10 zararda yapıldıysa
+    2. VEYA bir önceki satış zaten gerçekleşmişse (ard arda satış) — 
+       ve o satıştan önce alım yoksa (yani satışın ardından direkt yeni satış)
+  */
+  if (!txs.length) return 'FULL';
+
+  // Son satışın indexini bul
+  var lastSellIdx = -1;
+  for (var i = txs.length - 1; i >= 0; i--) {
+    if (txs[i].type === 'SELL') { lastSellIdx = i; break; }
+  }
+
+  // Son satıştan sonra alım var mı?
+  var buysSinceLastSell = lastSellIdx === -1
+    ? txs.filter(t => t.type !== 'SELL')
+    : txs.slice(lastSellIdx + 1).filter(t => t.type !== 'SELL');
+
+  // Koşul 2: Ard arda satış — son satıştan sonra HİÇ alım yoksa
+  if (lastSellIdx !== -1 && buysSinceLastSell.length === 0) {
+    return 'HALF';
+  }
+
+  // Koşul 1: Ard arda en az 2 alım %0-10 zararda
+  // buysSinceLastSell içinde sondan başa ard arda %0-10 sayısını bul
+  var consecutiveSmallLoss = 0;
+  for (var j = buysSinceLastSell.length - 1; j >= 0; j--) {
+    var tx = buysSinceLastSell[j];
+    var p = tx.pct || 0;
+    if (p <= 0 && p >= -10) {
+      consecutiveSmallLoss++;
+    } else {
+      break; // zincir kırıldı
+    }
+  }
+  if (consecutiveSmallLoss >= 2) return 'HALF';
+
+  return 'FULL';
+}
+
+function getModeInfo(txs) {
+  var mode = detectSellMode(txs);
+  var lastSellIdx = -1;
+  for (var i = txs.length - 1; i >= 0; i--) {
+    if (txs[i].type === 'SELL') { lastSellIdx = i; break; }
+  }
+  var buysSinceLastSell = lastSellIdx === -1
+    ? txs.filter(t => t.type !== 'SELL')
+    : txs.slice(lastSellIdx + 1).filter(t => t.type !== 'SELL');
+
+  // Ard arda %0-10 sayısı
+  var consecutiveSmallLoss = 0;
+  for (var j = buysSinceLastSell.length - 1; j >= 0; j--) {
+    var p = buysSinceLastSell[j].pct || 0;
+    if (p <= 0 && p >= -10) consecutiveSmallLoss++;
+    else break;
+  }
+
+  var isConsecutiveSell = lastSellIdx !== -1 && buysSinceLastSell.length === 0;
+
+  return { mode, consecutiveSmallLoss, isConsecutiveSell, buysSinceLastSell };
+}
+
+function analyzePrice() {
+  var price=parsePrice(document.getElementById('priceInput').value);
+  if(!price||price<=0){showToast('Geçerli bir fiyat gir!','error');return;}
+  var state=computeState(getTxs());
+  var txs=getTxs();
+  var action,buyAmount=0,sellAmount=0,realizeAmount=0,anaparaAmount=0,pct=0,motivKey='buy';
+  var sellMode='FULL';
+
+  if(state.totalBtc===0){
+    action='BUY_INIT'; buyAmount=buySteps.init; pct=0;
+  } else {
+    pct=((price-state.avgCost)/state.avgCost)*100;
+    if(pct>0){
+      action='SELL';
+      var profitFraction=(price-state.avgCost)/price;
+      var totalSellVal=state.totalBtc*profitFraction*price; // toplam kâr TL
+      sellMode=detectSellMode(txs);
+      if(sellMode==='HALF'){
+        realizeAmount=totalSellVal*0.5;
+        anaparaAmount=totalSellVal*0.5;
+        sellAmount=totalSellVal; // toplam satılacak BTC değeri
+      } else {
+        realizeAmount=totalSellVal;
+        anaparaAmount=0;
+        sellAmount=totalSellVal;
+      }
+      motivKey='sell';
+    } else {
+      action='BUY';
+      if(pct>=-10) buyAmount=buySteps.s1;
+      else if(pct>=-25) buyAmount=buySteps.s2;
+      else buyAmount=buySteps.s3;
+    }
+  }
+  var btcBought=buyAmount>0?buyAmount/price:0;
+  var btcSold=sellAmount>0?sellAmount/price:0;
+  lastAnalysis={price,action,buyAmount,sellAmount,realizeAmount,anaparaAmount,pct,btcBought,btcSold,sellMode};
+
+  var box=document.getElementById('analysisBox');
+  box.classList.add('visible');
+  var icon=document.getElementById('analysisIcon');
+  var title=document.getElementById('analysisTitle');
+  var desc=document.getElementById('analysisDesc');
+  var grid=document.getElementById('analysisGrid');
+  var motiv=document.getElementById('motivationBanner');
+  var pctColor=pct>=0?'var(--green)':'var(--red)';
+  var newAvg=state.avgCost;
+  if(action!=='SELL' && state.totalBtc>=0) newAvg=(state.totalInvested+buyAmount)/(state.totalBtc+btcBought);
+
+  // Mod bandı
+  var modeBand=document.getElementById('modeBand');
+  var sellDetailBand=document.getElementById('sellDetailBand');
+
+  if(action==='SELL'){
+    icon.className='a-icon sell'; icon.textContent='💰';
+    var modeInfo=getModeInfo(txs);
+
+    if(sellMode==='HALF'){
+      title.textContent='Yarı Realize Et!'; title.style.color='var(--teal)';
+      desc.textContent='%50 cebe, %50 anaparaya ekleniyor.';
+      // Mod bandı
+      modeBand.style.display='flex';
+      var reason=modeInfo.isConsecutiveSell?'Ard arda satış':'Ard arda '+modeInfo.consecutiveSmallLoss+'x %0-10 alım';
+      modeBand.innerHTML=`<span style="font-size:.9rem">🟡</span><span style="color:var(--gold)">Yarı/Yarı Modu</span><span style="color:var(--muted);font-weight:400;font-size:.7rem">— ${reason}`;
+      // Satış detay bandı
+      sellDetailBand.style.display='block';
+      var newAnapara=state.totalInvested+anaparaAmount;
+      sellDetailBand.innerHTML=`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:rgba(0,240,160,.07);border:1px solid rgba(0,240,160,.2);border-radius:8px;padding:8px 10px">
+            <div style="font-size:.62rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:3px">💸 Cebe Giren</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--green)">${fmtCur(realizeAmount,0)}</div>
+          </div>
+          <div style="background:rgba(0,212,188,.07);border:1px solid rgba(0,212,188,.2);border-radius:8px;padding:8px 10px">
+            <div style="font-size:.62rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:3px">➕ Anaparaya</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--teal)">${fmtCur(anaparaAmount,0)}</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:.76rem;color:var(--dim)">
+          Yeni anaparan: <strong style="color:var(--gold)">${fmtCur(newAnapara,0)}</strong>
+          <span style="color:var(--muted)"> (şu an ${fmtCur(state.totalInvested,0)} + ${fmtCur(anaparaAmount,0)})</span>
+        </div>
+      `;
+    } else {
+      title.textContent='Kâr Realize Et!'; title.style.color='var(--green)';
+      desc.textContent='Fiyat ort. maliyetin +'+fmt(pct,2)+'% üzerinde.';
+      modeBand.style.display='flex';
+      modeBand.innerHTML=`<span style="font-size:.9rem">🔵</span><span style="color:var(--blue)">Normal Mod</span><span style="color:var(--muted);font-weight:400;font-size:.7rem">— Tüm kâr realize edilir</span>`;
+      sellDetailBand.style.display='none';
+    }
+  } else {
+    icon.className='a-icon buy'; icon.textContent='🛒';
+    title.textContent=action==='BUY_INIT'?'🚀 İlk Alım!':'Alım Yap!';
+    title.style.color='var(--gold)';
+    desc.textContent=action==='BUY_INIT'?'İlk yatırım: '+fmtCur(buyAmount)+'!'
+      :'Zarar -%'+fmt(Math.abs(pct),2)+' → alım yap.';
+
+    // Alımda da durumu göster
+    if(txs.length>0){
+      var modeInfo2=getModeInfo(txs);
+      modeBand.style.display='flex';
+      var ardarda=modeInfo2.consecutiveSmallLoss;
+      if(pct<=-10){
+        modeBand.innerHTML=`<span>🔴</span><span style="color:var(--muted)">%0-10 zinciri kırıldı</span><span style="color:var(--muted);font-weight:400;font-size:.7rem">— Bu alım zinciri sıfırlar</span>`;
+      } else if(pct<0 && pct>-10){
+        var next=ardarda+1;
+        modeBand.innerHTML=`<span>${next>=2?'🟡':'⚪'}</span><span style="color:${next>=2?'var(--gold)':'var(--muted)'}">${next>=2?'Yarı/Yarı koşulu sağlandı':'%0-10 alım: '+next+'/2'}</span><span style="color:var(--muted);font-weight:400;font-size:.7rem">— Kâra geçince ${next>=2?'yarı realize':'tamamı realize'}</span>`;
+      } else {
+        modeBand.style.display='none';
+      }
+    } else {
+      modeBand.style.display='none';
+    }
+    sellDetailBand.style.display='none';
+  }
+
+  var metrics=action==='SELL'?[
+    {label:'Fiyat',val:fmtCur(price,0),color:'var(--text)'},
+    {label:'Ort. Maliyet',val:fmtCur(state.avgCost||0,0),color:'var(--teal)'},
+    {label:'K/Z %',val:'+'+fmt(pct,2)+'%',color:'var(--green)'},
+    {label:'Toplam Kâr',val:fmtCur(sellAmount,0),color:'var(--green)'},
+    {label:'Sat. BTC',val:fmtBtc(btcSold),color:'var(--green)'},
+    {label:'Mod',val:sellMode==='HALF'?'Yarı/Yarı':'Tamamı',color:sellMode==='HALF'?'var(--gold)':'var(--blue)'},
+  ]:[
+    {label:'Fiyat',val:fmtCur(price,0),color:'var(--text)'},
+    {label:'Ort. Maliyet',val:fmtCur(state.avgCost||0,0),color:'var(--teal)'},
+    {label:'K/Z %',val:(pct>=0?'+':'')+fmt(pct,2)+'%',color:pctColor},
+    {label:'Alınacak ₺',val:fmtCur(buyAmount),color:'var(--gold)'},
+    {label:'BTC',val:fmtBtc(btcBought),color:'var(--gold)'},
+    {label:'Yeni Ort.',val:fmtCur(newAvg,0),color:'var(--blue)'},
+  ];
+  grid.innerHTML=metrics.map(m=>`<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-val" style="color:${m.color}">${m.val}</div></div>`).join('');
+  var pool=MOTIVATIONS[motivKey];
+  motiv.textContent=pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById('saveBtn').disabled=false;
+  updateCards(state,price);
+
+  // Satışta döngü analizi göster
+  if(action==='SELL'){
+    var cycleBand=document.getElementById('cycleBand');
+    cycleBand.style.display='block';
+    document.getElementById('cycleBandBody').innerHTML='<div style="text-align:center;padding:10px;color:var(--muted);font-size:.78rem">⏳ Analiz yapılıyor...</div>';
+    buildCycleAnalysis(pct, price, state);
+  } else {
+    document.getElementById('cycleBand').style.display='none';
+  }
+
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ═══════════════════════════════════════
+   SAVE TRANSACTION
+═══════════════════════════════════════ */
+function saveTransaction() {
+  if(!lastAnalysis) return;
+  var {price,action,buyAmount,sellAmount,realizeAmount,anaparaAmount,pct,btcBought,btcSold,sellMode}=lastAnalysis;
+  var isHalf = sellMode==='HALF' && action==='SELL';
+
+  var tx={
+    id:Date.now(),
+    date:new Date().toLocaleString('tr-TR'),
+    price, pct:action==='BUY_INIT'?0:pct,
+    type:action==='SELL'?'SELL':(action==='BUY_INIT'?'INIT':'BUY'),
+    amount:action==='SELL'?(isHalf?realizeAmount:sellAmount):buyAmount,
+    btcAmount:action==='SELL'?btcSold:btcBought,
+    sellMode: action==='SELL'?sellMode:undefined,
+    anaparaEkleme: isHalf?anaparaAmount:0,
+  };
+
+  var txs=getTxs(); txs.push(tx); setTxs(txs);
+
+  // HALF modunda: anaparaya eklenen miktarı totalInvested'a ekle
+  if(isHalf && anaparaAmount>0){
+    var currentExtra = parseFloat(localStorage.getItem('btc_extra_invested')||'0');
+    localStorage.setItem('btc_extra_invested', (currentExtra+anaparaAmount).toString());
+  }
+
+  // Satışsa döngüyü kaydet
+  if(tx.type==='SELL'){
+    var fgEl = document.getElementById('fgValue');
+    var fgVal = fgEl ? parseInt(fgEl.textContent)||null : null;
+    recordCycle(tx, computeState(getTxs()), fgVal);
+  }
+
+  saveLocal(); renderAll(); spawnConfetti();
+  document.getElementById('saveBtn').disabled=true;
+
+  var isSell=action==='SELL', isInit=action==='BUY_INIT';
+  var amount=isSell?sellAmount:(isInit?buySteps.init:buyAmount);
+  var state2=computeState(getTxs());
+
+  document.getElementById('saveHero').textContent=isSell?(isHalf?'🎯':'💰'):(isInit?'🚀':'🛒');
+  document.getElementById('saveTitle').textContent=isSell?(isHalf?'Yarı Realize Edildi!':'Kâr Realize Edildi!'):(isInit?'İlk Alım! 🎊':'Alım Kaydedildi!');
+  document.getElementById('saveSub').textContent=isSell?(isHalf?'Yarısı cebe, yarısı anaparaya eklendi!':'Disiplinli yatırımcılar kârı realize eder!'):(isInit?'Bitcoin yolculuğun başladı!':'Mekanik strateji çalışıyor!');
+
+  document.getElementById('saveStats').innerHTML=isSell?(isHalf?`
+    <div class="save-stat"><div class="save-stat-label">💸 Cebe Giren</div><div class="save-stat-val text-green">${fmtCur(realizeAmount,0)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">➕ Anaparaya</div><div class="save-stat-val text-teal">${fmtCur(anaparaAmount,0)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">🏦 Yeni Anapara</div><div class="save-stat-val text-gold">${fmtCur(state2.totalInvested+anaparaAmount,0)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">🪙 Kalan BTC</div><div class="save-stat-val text-gold">${fmtBtc(state2.totalBtc)}</div></div>
+  `:`
+    <div class="save-stat"><div class="save-stat-label">Çekilen</div><div class="save-stat-val text-green">${fmtCur(sellAmount,0)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">Kalan BTC</div><div class="save-stat-val text-gold">${fmtBtc(state2.totalBtc)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">Toplam Çekilen</div><div class="save-stat-val text-blue">${fmtCur(state2.totalWithdrawn,0)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">Toplam İşlem</div><div class="save-stat-val text-teal">${getTxs().length}</div></div>
+  `):`
+    <div class="save-stat"><div class="save-stat-label">Yatırılan</div><div class="save-stat-val text-gold">${fmtCur(amount,0)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">Alınan BTC</div><div class="save-stat-val text-gold">${fmtBtc(btcBought)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">Toplam BTC</div><div class="save-stat-val text-teal">${fmtBtc(state2.totalBtc)}</div></div>
+    <div class="save-stat"><div class="save-stat-label">Yeni Ort.</div><div class="save-stat-val text-blue">${fmtCur(state2.avgCost,0)}</div></div>
+  `;
+  var pool=MOTIVATIONS[isSell?'sell':'buy'];
+  document.getElementById('saveMotiv').textContent=pool[Math.floor(Math.random()*pool.length)];
+  var tips=isSell?(isHalf?[
+    'Akıllı hamle! Hem kâr aldın hem anaparanı büyüttün.',
+    'Yarı/Yarı modu sermayeni otomatik büyütüyor — mekanik strateji evriliyor!',
+    'Anaparan büyüdü. Bir sonraki döngüde daha fazla kâr üreteceksin!',
+  ]:[
+    'Çektiğin kâr gerçek kâr. Bir sonraki dip bekleniyor!',
+    'Sermaye korundu, kâr cepte. İşte mekanik yatırımın gücü!',
+  ]):[
+    'Ortalama maliyetin düştü. Bitcoin sana borçlandı 😄',
+    'DCA stratejisi zaman içinde güçlenir. Sabır en büyük yatırım aracın!',
+    'Her alımda 1 BTC\'ye biraz daha yaklaşıyorsun!',
+  ];
+  document.getElementById('saveTip').innerHTML='<em>💡 Sonraki adım:</em> '+tips[Math.floor(Math.random()*tips.length)];
+  showModal('saveModal');
+  lastAnalysis=null;
+}
+
+/* ═══════════════════════════════════════
+   RENDER ALL
+═══════════════════════════════════════ */
+function renderAll() {
+  var txs=getTxs();
+  var state=computeState(txs);
+  var lastPrice=txs.length?txs[txs.length-1].price:0;
+  updateCards(state,lastPrice);
+  renderTable();
+  updateLevel();
+  updateGoalBar();
+  updateBadges();
+  updateCountdown();
+  updateStepsPreview();
+  renderPortfolioTabs();
+  renderAdvStats();
+  renderKova();
+  document.getElementById('streakCount').textContent=txs.length;
+}
+
+function updateCards(state,currentPrice) {
+  document.getElementById('cardTotalInvested').textContent=fmtCur(state.totalInvested);
+  document.getElementById('cardAvgCost').textContent=state.avgCost?fmtCur(state.avgCost,0):'₺0';
+  document.getElementById('cardWithdrawn').textContent=fmtCur(state.totalWithdrawn,0);
+  document.getElementById('cardBtcTotal').textContent=fmtBtc(state.totalBtc);
+  var portVal=currentPrice?state.totalBtc*currentPrice:0;
+  var unrealizedKZ = portVal - state.totalInvested;
+  var kzEl = document.getElementById('cardPortfoyDeger');
+  kzEl.textContent = currentPrice ? (unrealizedKZ>=0?'+':'')+fmtCur(unrealizedKZ,0) : '₺0';
+  kzEl.className = 'tile-val mono ' + (unrealizedKZ>=0?'teal':'red');
+  if(currentPrice&&state.avgCost){
+    var pct=((currentPrice-state.avgCost)/state.avgCost)*100;
+    var el=document.getElementById('cardPL');
+    el.textContent=(pct>=0?'+':'')+fmt(pct,2)+'%';
+    el.className='tile-val mono '+(pct>=0?'green':'red');
+    document.getElementById('cardPLTile').querySelector('.stat-tile,.tile-label')?.setAttribute && null;
+    document.getElementById('cardPLSub').textContent='Fiyat: '+fmtCur(currentPrice,0);
+  }
+  // streak modal
+  var txs=getTxs();
+  document.getElementById('streakModalBody').innerHTML=`
+    <div class="sim-row"><span>Toplam İşlem</span><strong>${txs.length}</strong></div>
+    <div class="sim-row"><span>Alım</span><strong>${txs.filter(t=>t.type!=='SELL').length}</strong></div>
+    <div class="sim-row"><span>Satış</span><strong>${txs.filter(t=>t.type==='SELL').length}</strong></div>
+    <div class="sim-row"><span>Toplam Yatırım</span><strong class="text-gold">${fmtCur(state.totalInvested)}</strong></div>
+    <div class="sim-row"><span>Çekilen Kâr</span><strong class="text-green">${fmtCur(state.totalWithdrawn,0)}</strong></div>
+  `;
+}
+
+/* ═══════════════════════════════════════
+   TABLE
+═══════════════════════════════════════ */
+function renderTable() {
+  var txs=getTxs();
+  var tbody=document.getElementById('txTableBody');
+  if(!txs.length){
+    tbody.innerHTML=`<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">₿</div><div class="empty-title">Henüz işlem yok</div><div class="empty-desc">Fiyat gir → Analiz Et → Kaydet</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML=txs.map((tx,i)=>{
+    var pctCell=tx.type==='INIT'?'<span class="badge-tx badge-init">İlk</span>':tx.pct>=0?`<span class="text-green">+${fmt(tx.pct,2)}%</span>`:`<span class="text-red">${fmt(tx.pct,2)}%</span>`;
+    var badge=tx.type==='SELL'?'<span class="badge-tx badge-sell">💰 Satış</span>':tx.type==='INIT'?'<span class="badge-tx badge-init">🚀 İlk</span>':'<span class="badge-tx badge-buy">🛒 Alım</span>';
+    var tutar=tx.type==='SELL'?`<span class="text-green">${fmtCur(tx.amount,0)}</span>`:`<span class="text-gold">${fmtCur(tx.amount,0)}</span>`;
+    return `<tr>
+      <td class="text-muted">${i+1}</td>
+      <td style="font-size:.7rem;white-space:nowrap">${tx.date.split(' ')[0]}</td>
+      <td class="mono text-gold">${fmtCur(tx.price,0)}</td>
+      <td>${pctCell}</td>
+      <td>${badge}</td>
+      <td>${tutar}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="askDelete(${i})" style="padding:4px 8px;font-size:.7rem">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   BTC CANLI GRAFİK
+═══════════════════════════════════════ */
+var btcLiveChartInst = null;
+var btcCurrentPeriod = 7;
+var btcAutoRefreshTimer = null;
+
+function setBtcPeriod(days, btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  btcCurrentPeriod = days;
+  loadBtcLiveChart(days);
+}
+
+async function loadBtcLiveChart(days) {
+  document.getElementById('btcChartLoading').style.display = 'block';
+  document.getElementById('btcChartWrap').style.display = 'none';
+  try {
+    var res = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=try&days='+days);
+    var data = await res.json();
+    var prices = data.prices; // [[timestamp, price], ...]
+    if (!prices || !prices.length) throw new Error();
+
+    // Veriyi sadeleştir — çok fazla nokta olmasın
+    var step = Math.max(1, Math.floor(prices.length / 60));
+    var filtered = prices.filter((_, i) => i % step === 0);
+
+    var labels = filtered.map(p => {
+      var d = new Date(p[0]);
+      if (days <= 7) return d.toLocaleDateString('tr-TR', {day:'numeric', month:'short'}) + ' ' + d.getHours().toString().padStart(2,'0') + ':00';
+      return d.toLocaleDateString('tr-TR', {day:'numeric', month:'short'});
+    });
+    var priceData = filtered.map(p => p[1]);
+    var currentPrice = priceData[priceData.length - 1];
+    var firstPrice = priceData[0];
+
+    // Anlık fiyat göster
+    document.getElementById('btcLivePrice').textContent = fmtCur(currentPrice, 0);
+
+    // Portföy verileri
+    var state = computeState(getTxs());
+    var txs = getTxs();
+
+    // Alım/Satış noktaları — timestamp'e en yakın fiyatı bul
+    var buyPoints = [], sellPoints = [];
+    txs.forEach(tx => {
+      var txTime = tx.id;
+      var firstTime = prices[0][0];
+      var lastTime = prices[prices.length-1][0];
+      if (txTime >= firstTime && txTime <= lastTime) {
+        // Zaman ekseninde en yakın index'i bul
+        var closest = filtered.reduce((best, p, i) => Math.abs(p[0]-txTime) < Math.abs(filtered[best][0]-txTime) ? i : best, 0);
+        if (tx.type !== 'SELL') {
+          buyPoints.push({x: labels[closest], y: tx.price});
+        } else {
+          sellPoints.push({x: labels[closest], y: tx.price});
+        }
+      }
+    });
+
+    // Ortalama maliyet çizgisi
+    var avgLine = state.avgCost ? priceData.map(() => state.avgCost) : null;
+
+    // Bir sonraki alım eşiği
+    var nextBuyLine = state.avgCost ? priceData.map(() => state.avgCost * 0.90) : null;
+
+    var datasets = [
+      {
+        label: 'BTC/TRY',
+        data: priceData,
+        borderColor: '#f7931a',
+        backgroundColor: (ctx) => {
+          var gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+          gradient.addColorStop(0, 'rgba(247,147,26,.25)');
+          gradient.addColorStop(1, 'rgba(247,147,26,.01)');
+          return gradient;
+        },
+        borderWidth: 2.5, tension: .35, fill: true,
+        pointRadius: 0, pointHoverRadius: 5,
+      }
+    ];
+
+    if (avgLine && state.totalBtc > 0) {
+      datasets.push({
+        label: 'Ort. Maliyet',
+        data: avgLine,
+        borderColor: '#00d4bc',
+        backgroundColor: 'transparent',
+        borderWidth: 1.5, borderDash: [6,4],
+        tension: 0, pointRadius: 0, fill: false,
+      });
+    }
+
+    if (nextBuyLine && state.totalBtc > 0) {
+      datasets.push({
+        label: 'Sonraki Alım',
+        data: nextBuyLine,
+        borderColor: 'rgba(0,240,160,.5)',
+        backgroundColor: 'transparent',
+        borderWidth: 1, borderDash: [3,5],
+        tension: 0, pointRadius: 0, fill: false,
+      });
+    }
+
+    // Alım noktaları
+    if (buyPoints.length) {
+      datasets.push({
+        label: 'Alım',
+        data: labels.map((l, i) => {
+          var bp = buyPoints.find(b => b.x === l);
+          return bp ? bp.y : null;
+        }),
+        borderColor: '#f7931a',
+        backgroundColor: '#f7931a',
+        pointRadius: labels.map((l) => buyPoints.find(b => b.x === l) ? 7 : 0),
+        pointStyle: 'circle',
+        showLine: false, fill: false,
+        pointHoverRadius: 9,
+      });
+    }
+
+    if (sellPoints.length) {
+      datasets.push({
+        label: 'Satış',
+        data: labels.map((l) => {
+          var sp = sellPoints.find(s => s.x === l);
+          return sp ? sp.y : null;
+        }),
+        borderColor: '#00f0a0',
+        backgroundColor: '#00f0a0',
+        pointRadius: labels.map((l) => sellPoints.find(s => s.x === l) ? 7 : 0),
+        pointStyle: 'triangle',
+        showLine: false, fill: false,
+        pointHoverRadius: 9,
+      });
+    }
+
+    if (btcLiveChartInst) btcLiveChartInst.destroy();
+    btcLiveChartInst = new Chart(document.getElementById('btcLiveChart'), {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            display: true,
+            labels: { color: '#7daad0', font: { size: 10 }, boxWidth: 12, padding: 8 }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ctx.parsed.y ? ctx.dataset.label + ': ' + fmtCur(ctx.parsed.y, 0) : null
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#7daad0', maxTicksLimit: 6, font: { size: 9 } }, grid: { color: 'rgba(39,70,102,.4)' } },
+          y: { ticks: { color: '#7daad0', callback: v => '₺' + fmt(v/1000000, 2) + 'M', font: { size: 9 } }, grid: { color: 'rgba(39,70,102,.4)' } }
+        }
+      }
+    });
+
+    document.getElementById('btcChartLoading').style.display = 'none';
+    document.getElementById('btcChartWrap').style.display = 'block';
+    document.getElementById('btcChartUpdated').textContent = '📡 Güncellendi: ' + new Date().toLocaleTimeString('tr-TR');
+
+    // Yorum oluştur
+    buildBtcCommentary(priceData, currentPrice, firstPrice, state, days);
+
+  } catch(err) {
+    document.getElementById('btcChartLoading').textContent = '⚠️ Veri alınamadı. İnternet bağlantını kontrol et.';
+  }
+}
+
+function buildBtcCommentary(priceData, currentPrice, firstPrice, state, days) {
+  var change = ((currentPrice - firstPrice) / firstPrice) * 100;
+  var high = Math.max(...priceData);
+  var low = Math.min(...priceData);
+  var highPct = ((high - currentPrice) / currentPrice) * 100; // yüksekten uzaklık
+  var lowPct = ((currentPrice - low) / low) * 100; // dipten uzaklık
+
+  // Trend tespiti
+  var half = Math.floor(priceData.length / 2);
+  var firstHalfAvg = priceData.slice(0, half).reduce((a,b)=>a+b,0)/half;
+  var secondHalfAvg = priceData.slice(half).reduce((a,b)=>a+b,0)/(priceData.length-half);
+  var trendStr = secondHalfAvg > firstHalfAvg * 1.02 ? 'up' : secondHalfAvg < firstHalfAvg * 0.98 ? 'down' : 'side';
+
+  // Volatilite
+  var diffs = priceData.slice(1).map((p,i) => Math.abs(p - priceData[i]) / priceData[i] * 100);
+  var avgVol = diffs.reduce((a,b)=>a+b,0)/diffs.length;
+  var volStr = avgVol > 3 ? 'yüksek' : avgVol > 1.5 ? 'orta' : 'düşük';
+
+  // Sinyal belirle
+  var signal;
+  if (change > 15 && trendStr === 'up') {
+    signal = { cls:'commentary-bull', icon:'🐂', title:'GÜÇLÜ BOĞA', sub:days+'G\'de +%'+fmt(change,1)+' — momentum yukarı' };
+  } else if (change > 5 && trendStr !== 'down') {
+    signal = { cls:'commentary-bull', icon:'🐂', title:'BOĞA EĞİLİMİ', sub:'Yükseliş trendi sürüyor' };
+  } else if (change < -15 && trendStr === 'down') {
+    signal = { cls:'commentary-bear', icon:'🐻', title:'GÜÇLÜ AYI', sub:days+'G\'de -%'+fmt(Math.abs(change),1)+' — baskı devam ediyor' };
+  } else if (change < -5 && trendStr === 'down') {
+    signal = { cls:'commentary-bear', icon:'🐻', title:'AYI EĞİLİMİ', sub:'Düşüş trendi hakim' };
+  } else if (Math.abs(change) <= 5 && trendStr === 'side') {
+    signal = { cls:'commentary-neutral', icon:'😐', title:'YATAY HAREKET', sub:'Belirgin bir trend yok' };
+  } else if (change < 0) {
+    signal = { cls:'commentary-caution', icon:'⚠️', title:'DİKKATLİ OL', sub:'Hafif düşüş — izlemeye devam' };
+  } else {
+    signal = { cls:'commentary-caution', icon:'👀', title:'KARIŞIK SINYALLER', sub:'Net trend oluşmadı' };
+  }
+
+  // Kişisel pozisyon yorumu
+  var positionText = '';
+  if (state.totalBtc > 0 && state.avgCost) {
+    var portPct = ((currentPrice - state.avgCost) / state.avgCost) * 100;
+    var nextBuy = state.avgCost * 0.90;
+    var nextSell = state.avgCost * 1.25;
+    if (portPct >= 25) {
+      positionText = 'Ortalama maliyetinin %'+fmt(portPct,1)+' üzerindesin — kâr realizasyonu için iyi bir bölge. Hedef satış fiyatın yaklaşık '+fmtCur(nextSell,0)+'.';
+    } else if (portPct >= 5) {
+      positionText = 'Kârda ve dengeli bir konumdasın (+%'+fmt(portPct,1)+'). Mekanik stratejini sürdür, fiyat '+fmtCur(nextSell,0)+'\'e yaklaştığında satış düşün.';
+    } else if (portPct >= -5) {
+      positionText = 'Başa baş noktasına yakınsın (%'+fmt(portPct,1)+'). Fiyat '+fmtCur(nextBuy,0)+' altına düşerse güçlü alım fırsatı.';
+    } else if (portPct >= -20) {
+      positionText = 'Ortalama maliyetinin %'+fmt(Math.abs(portPct),1)+' altındasın. DCA stratejin devrede — bir sonraki alım eşiğin '+fmtCur(nextBuy,0)+'.';
+    } else {
+      positionText = 'Derin zararda görünüyorsun (-%'+fmt(Math.abs(portPct),1)+'). Ama her alımda ortalaman düşüyor. Paniklemeden devam et!';
+    }
+  } else {
+    positionText = 'Henüz işlem kaydın yok. Piyasa durumuna göre ilk alım için hazırlanabilirsin.';
+  }
+
+  // Trend yorumu
+  var trendText = trendStr === 'up'
+    ? 'Son '+days+' günde fiyat genel olarak yukarı yönlü hareket etti.'
+    : trendStr === 'down'
+    ? 'Son '+days+' günde satış baskısı hakim, fiyat genel olarak aşağı baskılanıyor.'
+    : 'Son '+days+' günde fiyat yatay bir bant içinde seyrediyor.';
+
+  document.getElementById('btcCommentary').innerHTML = `
+    <div class="commentary-box ${signal.cls}">
+      <div class="commentary-signal">
+        <div class="commentary-signal-icon">${signal.icon}</div>
+        <div class="commentary-signal-text">
+          <div class="commentary-signal-title">${signal.title}</div>
+          <div class="commentary-signal-sub">${signal.sub}</div>
+        </div>
+      </div>
+      <div class="commentary-rows">
+        <div class="commentary-row">
+          <span class="commentary-row-label">${days}G Değişim</span>
+          <span class="commentary-row-val" style="color:${change>=0?'var(--green)':'var(--red)'}">${change>=0?'+':''}${fmt(change,2)}%</span>
+        </div>
+        <div class="commentary-row">
+          <span class="commentary-row-label">${days}G Yüksek</span>
+          <span class="commentary-row-val" style="color:var(--gold)">${fmtCur(high,0)}</span>
+        </div>
+        <div class="commentary-row">
+          <span class="commentary-row-label">${days}G Düşük</span>
+          <span class="commentary-row-val" style="color:var(--red)">${fmtCur(low,0)}</span>
+        </div>
+        <div class="commentary-row">
+          <span class="commentary-row-label">Dipten Uzaklık</span>
+          <span class="commentary-row-val" style="color:var(--teal)">+${fmt(lowPct,1)}%</span>
+        </div>
+        <div class="commentary-row">
+          <span class="commentary-row-label">Volatilite</span>
+          <span class="commentary-row-val">${volStr}</span>
+        </div>
+        ${state.avgCost ? `
+        <div class="commentary-row">
+          <span class="commentary-row-label">Sonraki Alım Eşiği</span>
+          <span class="commentary-row-val" style="color:var(--green)">${fmtCur(state.avgCost*0.9,0)}</span>
+        </div>
+        <div class="commentary-row">
+          <span class="commentary-row-label">Kâr Alma Hedefi</span>
+          <span class="commentary-row-val" style="color:var(--teal)">${fmtCur(state.avgCost*1.25,0)}</span>
+        </div>` : ''}
+      </div>
+      <div class="commentary-text">
+        ${trendText} ${positionText}
+      </div>
+    </div>
+  `;
+}
+
+// 5 dakikada bir otomatik güncelle
+function startBtcAutoRefresh() {
+  if (btcAutoRefreshTimer) clearInterval(btcAutoRefreshTimer);
+  btcAutoRefreshTimer = setInterval(() => {
+    if (document.getElementById('page-charts').classList.contains('active')) {
+      loadBtcLiveChart(btcCurrentPeriod);
+    }
+  }, 5 * 60 * 1000);
+}
+
+/* ═══════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════ */
+function renderCharts(state) {
+  var txs=getTxs();
+  if(!txs.length) return;
+  var labels=txs.map((_,i)=>i+1);
+  var prices=txs.map(t=>t.price);
+  var ri=0,rb=0;
+  var avgs=txs.map(t=>{
+    if(t.type==='BUY'||t.type==='INIT'){ri+=t.amount;rb+=t.btcAmount;}
+    else if(t.type==='SELL'){rb-=t.btcAmount;}
+    return rb>0?ri/rb:null;
+  });
+  if(priceChartInst){ priceChartInst.destroy(); priceChartInst=null; }
+  // priceChart canvas artık yok — BTC canlı grafik kullanılıyor
+  if(pieChartInst)pieChartInst.destroy();
+  pieChartInst=new Chart(document.getElementById('pieChart'),{
+    type:'doughnut',
+    data:{labels:['Aktif Sermaye','Çekilen Kâr'],datasets:[{data:[state.totalInvested,state.totalWithdrawn||0.001],backgroundColor:['rgba(247,147,26,.7)','rgba(0,232,150,.7)'],borderColor:['#f7931a','#00e896'],borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',labels:{color:'#7daad0',font:{size:10},padding:8}}}}
+  });
+  if(barChartInst)barChartInst.destroy();
+  var buyTxs=txs.filter(t=>t.type!=='SELL');
+  barChartInst=new Chart(document.getElementById('barChart'),{
+    type:'bar',
+    data:{labels:buyTxs.map((_,i)=>i+1),datasets:[{label:'Alım (₺)',data:buyTxs.map(t=>t.amount),backgroundColor:buyTxs.map(t=>t.type==='INIT'?'rgba(58,130,246,.7)':'rgba(247,147,26,.7)'),borderColor:buyTxs.map(t=>t.type==='INIT'?'#3b82f6':'#f7931a'),borderWidth:1.5,borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7daad0'},grid:{color:'rgba(39,70,102,.5)'}},y:{ticks:{color:'#7daad0',callback:v=>'₺'+fmt(v)},grid:{color:'rgba(39,70,102,.5)'}}}}
+  });
+  // Monthly chart
+  var monthly={};
+  txs.forEach(tx=>{
+    var d=new Date(tx.id);
+    var key=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+    if(!monthly[key])monthly[key]=0;
+    if(tx.type!=='SELL')monthly[key]+=tx.amount;
+  });
+  var mLabels=Object.keys(monthly).sort();
+  var mVals=mLabels.map(k=>monthly[k]);
+  if(monthlyChartInst)monthlyChartInst.destroy();
+  monthlyChartInst=new Chart(document.getElementById('monthlyChart'),{
+    type:'bar',
+    data:{labels:mLabels,datasets:[{label:'Aylık Yatırım',data:mVals,backgroundColor:'rgba(0,212,188,.6)',borderColor:'#00d4bc',borderWidth:1.5,borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7daad0',font:{size:9}},grid:{color:'rgba(39,70,102,.5)'}},y:{ticks:{color:'#7daad0',callback:v=>'₺'+fmt(v)},grid:{color:'rgba(39,70,102,.5)'}}}}
+  });
+}
+
+/* ═══════════════════════════════════════
+   ADVANCED STATS
+═══════════════════════════════════════ */
+function renderAdvStats() {
+  var txs=getTxs();
+  var state=computeState(txs);
+  var el=document.getElementById('advStatsBody');
+  if(!el) return;
+  if(!txs.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Henüz veri yok</div></div>';return;}
+  var buyTxs=txs.filter(t=>t.type!=='SELL');
+  if(!buyTxs.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Alım işlemi yok</div></div>';return;}
+  var bestBuy=buyTxs.reduce((a,b)=>a.price<b.price?a:b,buyTxs[0]);
+  var worstBuy=buyTxs.reduce((a,b)=>a.price>b.price?a:b,buyTxs[0]);
+  var lastPrice=txs[txs.length-1].price;
+  var unrealized=state.totalBtc*lastPrice-state.totalInvested;
+  var totalBuyAmt=buyTxs.reduce((s,t)=>s+t.amount,0);
+  var avgBuy=totalBuyAmt/buyTxs.length;
+  var firstDate=new Date(txs[0].id);
+  var now=new Date();
+  var diffDays=Math.floor((now-firstDate)/(1000*60*60*24));
+  var y=Math.floor(diffDays/365);
+  var m=Math.floor((diffDays%365)/30);
+  var d=diffDays%30;
+  var durationStr='';
+  if(y>0) durationStr+=y+' yıl ';
+  if(m>0) durationStr+=m+' ay ';
+  durationStr+=d+' gün';
+  el.innerHTML=`
+    <div class="sim-row"><span class="text-muted">En İyi Alım Fiyatı</span><span class="text-green mono">${fmtCur(bestBuy.price,0)}</span></div>
+    <div class="sim-row"><span class="text-muted">En Pahalı Alım Fiyatı</span><span class="text-red mono">${fmtCur(worstBuy.price,0)}</span></div>
+    <div class="sim-row">
+      <span class="text-muted">Gerçekleşmemiş K/Z <span id="advStatslivePrice" style="font-size:.62rem;color:var(--muted)">son işlem fiyatına göre</span></span>
+      <span id="advStatsUnrealized" class="${unrealized>=0?'text-green':'text-red'} mono">${unrealized>=0?'+':''}${fmtCur(unrealized,0)}</span>
+    </div>
+    <div class="sim-row"><span class="text-muted">Toplam Yatırım</span><span class="text-gold mono">${fmtCur(totalBuyAmt,0)}</span></div>
+    <div class="sim-row"><span class="text-muted">Alım / Satış Sayısı</span><span class="mono">${buyTxs.length} alım / ${txs.filter(t=>t.type==='SELL').length} satış</span></div>
+    <div class="sim-row"><span class="text-muted">Ortalama Alım Tutarı</span><span class="text-gold mono">${fmtCur(avgBuy,0)}</span></div>
+    <div class="sim-row"><span class="text-muted">Yolculuk Süresi</span><span class="text-teal mono">${durationStr}</span></div>
+    <div class="sim-row"><span class="text-muted">Toplam BTC</span><span class="text-gold mono">${fmtBtc(state.totalBtc)}</span></div>
+    <div class="sim-row"><span class="text-muted">Çekilen Kâr</span><span class="text-blue mono">${fmtCur(state.totalWithdrawn,0)}</span></div>
+  `;
+  // Arka planda canlı fiyat çek ve güncelle
+  refreshAdvStatsLive();
+}
+
+/* ═══════════════════════════════════════
+   LEVEL
+═══════════════════════════════════════ */
+function updateLevel() {
+  var count=getTxs().length;
+  var lv=LEVELS[LEVELS.length-1];
+  for(var l of LEVELS){if(count<l.max){lv=l;break;}}
+  var next=LEVELS.find(l=>l.min>lv.min)||lv;
+  var pct=Math.min(100,((count-lv.min)/Math.max(1,lv.max-lv.min))*100);
+  document.getElementById('levelEmoji').textContent=lv.emoji;
+  document.getElementById('levelName').textContent=lv.name;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('xpLabel').textContent=count+'/'+(lv.max===Infinity?'∞':lv.max)+' → '+(lv===next?'Maks!':next.name);
+}
+
+/* ═══════════════════════════════════════
+   GOAL
+═══════════════════════════════════════ */
+function showGoalModal(){ 
+  if(userGoal){document.getElementById('goalNameInput').value=userGoal.name||'';document.getElementById('goalBtcInput').value=userGoal.btc||'';}
+  showModal('goalModal');
+}
+function setQuickGoal(btc){ document.getElementById('goalBtcInput').value=btc; document.getElementById('goalNameInput').value=btc+' BTC Hedefi'; }
+function saveGoal(){
+  var name=document.getElementById('goalNameInput').value.trim();
+  var btc=parseFloat(document.getElementById('goalBtcInput').value)||0;
+  if(!btc){showToast('Geçerli BTC gir!','error');return;}
+  userGoal={name:name||btc+' BTC',btc};
+  localStorage.setItem('btc_goal',JSON.stringify(userGoal));
+  closeModal('goalModal'); updateGoalBar();
+  showToast('🎯 Hedef kaydedildi!','success');
+}
+function updateGoalBar(){
+  var state=computeState(getTxs());
+  if(!userGoal||!userGoal.btc){
+    document.getElementById('goalName').textContent='Hedef belirle →';
+    document.getElementById('goalFill').style.width='0%';
+    document.getElementById('goalPct').textContent='—';
+    return;
+  }
+  var pct=Math.min(100,(state.totalBtc/userGoal.btc)*100);
+  document.getElementById('goalName').textContent=userGoal.name;
+  document.getElementById('goalFill').style.width=pct.toFixed(1)+'%';
+  document.getElementById('goalPct').textContent=pct.toFixed(1)+'%';
+}
+
+/* ═══════════════════════════════════════
+   COUNTDOWN
+═══════════════════════════════════════ */
+function buildCalendar() {
+  var today = new Date().getDate();
+  var grid = document.getElementById('calendarGrid');
+  var html = '';
+  // 1-31 günleri göster, ama 29-31 soluk
+  for (var d = 1; d <= 31; d++) {
+    var isSelected = investDay === d;
+    var isToday = today === d;
+    var isRecommended = d <= 28;
+    var dimStyle = d > 28 ? 'opacity:.45;' : '';
+    html += `<div class="cal-day ${isSelected?'selected':''} ${isToday&&!isSelected?'today':''} ${isRecommended&&!isSelected?'recommended':''}"
+      style="${dimStyle}" onclick="selectCalDay(${d})">${d}</div>`;
+  }
+  grid.innerHTML = html;
+  if (investDay) {
+    document.getElementById('selectedDayLabel').textContent = 'Her ayın ' + investDay + '. günü';
+    document.getElementById('investDaySaveBtn').disabled = false;
+  }
+}
+
+function selectCalDay(d) {
+  investDay = d;
+  // Seçili günü güncelle
+  document.querySelectorAll('.cal-day').forEach((el, i) => {
+    el.classList.toggle('selected', i + 1 === d);
+  });
+  document.getElementById('selectedDayLabel').textContent = 'Her ayın ' + d + '. günü';
+  document.getElementById('investDaySaveBtn').disabled = false;
+}
+
+function saveInvestDay(){
+  if(!investDay){ showToast('Bir gün seç!','error'); return; }
+  localStorage.setItem('btc_invest_day', investDay);
+  closeModal('investDayModal'); updateCountdown();
+  showToast('📅 Yatırım günü kaydedildi: Ayın '+investDay+'. günü','success');
+}
+function updateCountdown(){
+  var box=document.getElementById('countdownBox');
+  if(!investDay){
+    document.getElementById('countdownDays').textContent='📅';
+    document.getElementById('countdownDate').textContent='Yatırım günü belirle →';
+    return;
+  }
+  var now=new Date();
+  var target=new Date(now.getFullYear(),now.getMonth(),investDay);
+  if(target<=now) target=new Date(now.getFullYear(),now.getMonth()+1,investDay);
+  var diff=Math.ceil((target-now)/(1000*60*60*24));
+  document.getElementById('countdownDays').textContent=diff===0?'BUGÜN!':diff;
+  document.getElementById('countdownDate').textContent='Ayın '+investDay+'. günü — '+target.toLocaleDateString('tr-TR');
+}
+
+/* ═══════════════════════════════════════
+   BADGES
+═══════════════════════════════════════ */
+var ACHIEVEMENTS=[
+  /* ── BAŞLANGIÇ ── */
+  {id:'first',      emoji:'🌱', name:'İlk Adım',        category:'Başlangıç', desc:'İlk Bitcoin alımını yaptın! Her büyük yolculuk tek bir adımla başlar.',                    check:(txs)=>txs.length>=1},
+  {id:'brave',      emoji:'🦋', name:'Cesur Yatırımcı', category:'Başlangıç', desc:'İlk alımından sonra ikinci alımını da yaptın. Artık gerçek bir DCA\'cısın!',               check:(txs)=>txs.filter(t=>t.type!=='SELL').length>=2},
+  {id:'dca3',       emoji:'📐', name:'DCA Ritmi',        category:'Başlangıç', desc:'3 alım yaparak DCA stratejini hayata geçirdin. Ritim oluştu!',                             check:(txs)=>txs.filter(t=>t.type!=='SELL').length>=3},
+  {id:'dca5',       emoji:'🎵', name:'DCA Melodisi',     category:'Başlangıç', desc:'5 alım — artık mekanik strateji alışkanlık haline geliyor.',                              check:(txs)=>txs.filter(t=>t.type!=='SELL').length>=5},
+
+  /* ── KÂR & SATIŞ ── */
+  {id:'firstsell',  emoji:'💰', name:'İlk Kâr',         category:'Kâr',       desc:'İlk kâr realizasyonunu yaptın! Kâğıt kârı gerçek paraya çevirdin.',                       check:(txs)=>txs.some(t=>t.type==='SELL')},
+  {id:'sell3',      emoji:'💸', name:'Kâr Ustası',       category:'Kâr',       desc:'3 kez kâr realize ettin. Disiplinli yatırımcı kimliğin oturdu.',                          check:(txs)=>txs.filter(t=>t.type==='SELL').length>=3},
+  {id:'sell10',     emoji:'🏦', name:'Bankacı',          category:'Kâr',       desc:'10 kez kâr realizasyonu — bu noktada strateji otomatik pilota geçmiş demektir.',          check:(txs)=>txs.filter(t=>t.type==='SELL').length>=10},
+
+  /* ── BTC BİRİKİMİ ── */
+  {id:'btc0001',    emoji:'⚛️',  name:'Satoshi Sahibi',  category:'Birikim',   desc:'0.001 BTC biriktirdin! Her satoshi değerlidir.',                                          check:(txs,st)=>st.totalBtc>=0.001},
+  {id:'btc001',     emoji:'🪙',  name:'Bronz Cüzdan',    category:'Birikim',   desc:'0.01 BTC biriktirdin! Artık ondalıklar kulağa güzel geliyor.',                            check:(txs,st)=>st.totalBtc>=0.01},
+  {id:'btc005',     emoji:'🥈',  name:'Gümüş Cüzdan',    category:'Birikim',   desc:'0.05 BTC — hedefin yarısına yaklaştın! Dur baktıklarında görecekler.',                   check:(txs,st)=>st.totalBtc>=0.05},
+  {id:'btc01',      emoji:'💎',  name:'Altın Cüzdan',    category:'Birikim',   desc:'0.1 BTC biriktirdin! Dünya nüfusunun çok küçük bir kısmı bu noktada.',                    check:(txs,st)=>st.totalBtc>=0.1},
+  {id:'btc025',     emoji:'💠',  name:'Kristal Cüzdan',  category:'Birikim',   desc:'0.25 BTC! Her 4 kişiden biri bir BTC\'ye sahip olsa sen 1\'ini elinde tutuyorsun.',       check:(txs,st)=>st.totalBtc>=0.25},
+  {id:'btc05',      emoji:'🔷',  name:'Elmas Cüzdan',    category:'Birikim',   desc:'0.5 BTC — yarım Bitcoin! Çoğu insanın ulaşamadığı eşik.',                                check:(txs,st)=>st.totalBtc>=0.5},
+  {id:'btc1',       emoji:'🏆',  name:'Tam Bitcoin',     category:'Birikim',   desc:'1 TAM BİTCOIN! Dünyada bunu yapabilen çok az kişi var. Sen başardın!',                   check:(txs,st)=>st.totalBtc>=1},
+
+  /* ── İŞLEM SAYISI ── */
+  {id:'tx5',        emoji:'🌿',  name:'Filiz',           category:'Deneyim',   desc:'5 işlem — tohumdan filize dönüştün.',                                                     check:(txs)=>txs.length>=5},
+  {id:'txten',      emoji:'🏅',  name:'10 İşlem',        category:'Deneyim',   desc:'10 işlem kaydetti. Artık orta vadeli bir yatırımcısın!',                                 check:(txs)=>txs.length>=10},
+  {id:'tx20',       emoji:'🌳',  name:'Büyüyen Ağaç',   category:'Deneyim',   desc:'20 işlem — kök salmaya başladın. Piyasa seni artık tanıyor!',                            check:(txs)=>txs.length>=20},
+  {id:'hodl',       emoji:'🦁',  name:'HODL Ustası',     category:'Deneyim',   desc:'25 işlemi geçtin. Düşüşlerde de ayakta kaldın — gerçek bir HODL\'cı!',                  check:(txs)=>txs.length>=25},
+  {id:'tx50',       emoji:'🔥',  name:'Ateş Yatırımcı', category:'Deneyim',   desc:'50 işlem! Bu noktaya gelen çok az kişi pişman olmuştur.',                                check:(txs)=>txs.length>=50},
+  {id:'moon',       emoji:'🚀',  name:'Efsane',          category:'Deneyim',   desc:'100 işlem — sen artık bir efsanesin. Bitcoin tarihi seni hatırlayacak.',                 check:(txs)=>txs.length>=100},
+
+  /* ── YATIRIM MİKTARI ── */
+  {id:'inv100k',    emoji:'💵',  name:'6 Hane',          category:'Sermaye',   desc:'Toplam 100.000 ₺ yatırım yaptın. Büyük sermaye, büyük vizyon!',                         check:(txs,st)=>st.totalInvested>=100000},
+  {id:'inv250k',    emoji:'💶',  name:'Çeyrek Milyon',   category:'Sermaye',   desc:'250.000 ₺ yatırım — çeyrek milyona ulaştın!',                                           check:(txs,st)=>st.totalInvested>=250000},
+  {id:'inv500k',    emoji:'💷',  name:'Yarım Milyon',    category:'Sermaye',   desc:'500.000 ₺ — kararlarına güveniyorsun ve bu yatırım bunu kanıtlıyor.',                   check:(txs,st)=>st.totalInvested>=500000},
+  {id:'inv1m',      emoji:'🤑',  name:'Milyoner Yolu',   category:'Sermaye',   desc:'1.000.000 ₺ yatırım! Bu yolculukta milyonlarca insanın önündesin.',                     check:(txs,st)=>st.totalInvested>=1000000},
+
+  /* ── ÇEKÜLEN KÂR ── */
+  {id:'profit50k',  emoji:'🎁',  name:'İlk Büyük Kâr',  category:'Kâr',       desc:'50.000 ₺ kâr çektin! Strateji meyvelerini vermeye başladı.',                            check:(txs,st)=>st.totalWithdrawn>=50000},
+  {id:'profit100k', emoji:'🎊',  name:'Kâr Makinesi',   category:'Kâr',       desc:'100.000 ₺ realize edildi. Mekanik strateji gerçekten çalışıyor!',                       check:(txs,st)=>st.totalWithdrawn>=100000},
+
+  /* ── ÖZEL DURUMLAR ── */
+  {id:'dip10',      emoji:'🎣',  name:'Dip Avcısı',      category:'Strateji',  desc:'%10 düşüşte alım yaptın. Herkes satarken sen aldın — işte strateji bu!',               check:(txs)=>txs.some(t=>t.pct<=-10&&t.type==='BUY')},
+  {id:'dip25',      emoji:'🦈',  name:'Köpek Balığı',    category:'Strateji',  desc:'%25 düşüşte alım! Paniğin zirvesinde pozisyon açmak cesaret ister.',                   check:(txs)=>txs.some(t=>t.pct<=-25&&t.type==='BUY')},
+  {id:'dip40',      emoji:'🐋',  name:'Balina',          category:'Strateji',  desc:'%40 düşüşte alım yaptın. Artık sen de büyük oyuncularla aynı bölgedesin!',             check:(txs)=>txs.some(t=>t.pct<=-40&&t.type==='BUY')},
+  {id:'consistent', emoji:'📅',  name:'Tutarlı Yatırımcı',category:'Strateji', desc:'Her ay düzenli yatırım yaparak 3 ayı doldurdun. Tutarlılık en büyük silah!',           check:(txs)=>{ var months=new Set(txs.filter(t=>t.type!=='SELL').map(t=>{var d=new Date(t.id);return d.getFullYear()+'-'+d.getMonth();})); return months.size>=3; }},
+  {id:'consistent6',emoji:'🗓️', name:'6 Ay Serisi',     category:'Strateji',  desc:'6 ay boyunca düzenli yatırım! Bu disiplin çoğu insanın sahip olmadığı bir erdem.',     check:(txs)=>{ var months=new Set(txs.filter(t=>t.type!=='SELL').map(t=>{var d=new Date(t.id);return d.getFullYear()+'-'+d.getMonth();})); return months.size>=6; }},
+  {id:'journal5',   emoji:'📝',  name:'Günlükçü',        category:'Özel',      desc:'Yatırım günlüğüne 5 giriş yaptın. Kendi yolculuğunu belgelemek çok değerli!',          check:(txs)=>{ var j=JSON.parse(localStorage.getItem('btc_journal')||'[]'); return j.length>=5; }},
+];
+
+/* ── TEMA ── */
+var isDark = localStorage.getItem('btc_theme') !== 'light';
+function applyTheme() {
+  if (isDark) {
+    document.body.classList.remove('light-theme');
+    document.getElementById('themeBtn').textContent = '🌙';
+  } else {
+    document.body.classList.add('light-theme');
+    document.getElementById('themeBtn').textContent = '☀️';
+  }
+}
+function toggleTheme() {
+  isDark = !isDark;
+  localStorage.setItem('btc_theme', isDark ? 'dark' : 'light');
+  applyTheme();
+  showToast(isDark ? '🌙 Gece modu' : '☀️ Gündüz modu', 'success');
+}
+function updateBadges(){
+  var txs=getTxs(); var state=computeState(txs);
+  ACHIEVEMENTS.forEach(a=>{
+    if(!earnedBadges.includes(a.id)&&a.check(txs,state)){
+      earnedBadges.push(a.id);
+      setTimeout(()=>showToast('🏆 Yeni rozet: '+a.emoji+' '+a.name,'success'),600);
+    }
+  });
+  localStorage.setItem('btc_badges',JSON.stringify(earnedBadges));
+
+  var earned = ACHIEVEMENTS.filter(a=>earnedBadges.includes(a.id));
+  var earnedCount = earned.length;
+
+  // Özet bar: son 5 kazanılan rozet emojisi
+  var icons = earned.slice(-5).map(a=>a.emoji).join('');
+  if (!icons) icons = '🔒';
+  document.getElementById('badgesEarnedIcons').textContent = icons;
+  document.getElementById('badgesEarnedCount').textContent = earnedCount;
+}
+
+function openBadgesModal(){
+  var txs=getTxs(); var state=computeState(txs);
+  var earned = ACHIEVEMENTS.filter(a=>earnedBadges.includes(a.id));
+  var total = ACHIEVEMENTS.length;
+  document.getElementById('badgesModalSub').textContent = earned.length+' / '+total+' rozet kazanıldı';
+
+  // Kategoriye göre grupla
+  var cats = {};
+  ACHIEVEMENTS.forEach(a=>{
+    if(!cats[a.category]) cats[a.category]=[];
+    cats[a.category].push(a);
+  });
+
+  var html = '';
+  Object.keys(cats).forEach(cat=>{
+    html += `<div class="badge-category-title">${cat}</div><div class="badges-grid">`;
+    cats[cat].forEach(a=>{
+      var isEarned = earnedBadges.includes(a.id);
+      html += `<div class="badge-card ${isEarned?'earned':'locked'}" onclick="showBadgeInfo('${a.id}')">
+        <div class="badge-card-emoji">${a.emoji}</div>
+        <div class="badge-card-info">
+          <div class="badge-card-name">${a.name}</div>
+          <div class="badge-card-cat">${isEarned?'✅ Kazanıldı':'🔒 Kilitli'}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('badgesModalContent').innerHTML = html;
+  showModal('badgesModal');
+}
+function showBadgeInfo(id){
+  var a=ACHIEVEMENTS.find(x=>x.id===id); if(!a)return;
+  var earned=earnedBadges.includes(id);
+  closeModal('badgesModal');
+  setTimeout(()=>{
+    document.getElementById('infoIcon').textContent=a.emoji;
+    document.getElementById('infoTitle').textContent=a.name;
+    document.getElementById('infoSub').textContent=(earned?'✅ Kazanıldı! · ':'🔒 Kilitli · ')+'Kategori: '+a.category;
+    document.getElementById('infoBody').innerHTML=`<p>${a.desc}</p>${earned?'<p style="margin-top:10px;color:var(--green);font-weight:700">Tebrikler! Bu rozeti hak ettin 🎊</p>':'<p style="margin-top:10px;color:var(--muted)">Devam et, yakında kazanacaksın!</p>'}`;
+    // Geri butonu — başarımlar listesine dön
+    var actions = document.querySelector('#infoModal .modal-actions');
+    actions.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('infoModal');openBadgesModal()">← Geri</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('infoModal')">Kapat</button>
+    `;
+    showModal('infoModal');
+  }, 220);
+}
+
+/* ═══════════════════════════════════════
+   INFO MODAL
+═══════════════════════════════════════ */
+var INFO={
+  totalInvested:{icon:'💰',title:'Toplam Ana Para',sub:'Portföyüne koyduğun gerçek sermaye',body:'<p>Şimdiye kadar Bitcoin alımına harcadığın toplam ₺ tutarı.</p><ul><li>Satış yapınca <strong>değişmez</strong> — sadece alımlar sayılır.</li><li>DCA stratejisinde bu rakam zamanla büyür, ortalama maliyet düşer.</li></ul>'},
+  avgCost:{icon:'📊',title:'Ortalama Maliyet',sub:'Her BTC\'ye ne kadar ödediğinin ortalaması',body:'<p><strong>Ağırlıklı ortalama alım fiyatın.</strong> Bitcoin bu rakamın üzerine çıkınca kârdayısın.</p><ul><li>Her yeni alımda bu fiyat <strong>aşağı çekilir</strong>.</li><li>DCA\'nın sihri burada!</li></ul>'},
+  pl:{icon:'📈',title:'Kâr / Zarar',sub:'Anlık fiyata göre portföyünün durumu',body:'<p>Son fiyata göre <strong>ortalama maliyete kıyasla</strong> K/Z yüzdesi.</p><ul><li><strong>Yeşil</strong> = kâr bölgesi 🟢</li><li><strong>Kırmızı</strong> = alım fırsatı bölgesi 🔴</li><li>Mekanik stratejide kırmızı görünce paniklemiyorsun — <strong>alım yapıyorsun!</strong></li></ul>'},
+  withdrawn:{icon:'💸',title:'Çekilen Kâr',sub:'Realize ettiğin gerçek para',body:'<p>Satış yaparak gerçekten çektiğin kâr.</p><ul><li>Bu rakam büyüdükçe stratejinin çalıştığının kanıtı!</li><li>Çekilen kâr = <strong>gerçek kâr</strong>.</li></ul>'},
+  btcTotal:{icon:'🪙',title:'Toplam BTC',sub:'Elindeki Bitcoin miktarı',body:'<p>Tüm alım ve satışlardan sonra elinde kalan BTC.</p><ul><li>1 BTC = 100.000.000 satoshi.</li><li>Bitcoin arzı <strong>21 milyon</strong> ile sınırlı.</li><li>Önemli olan kaç TL değil — <strong>kaç BTC!</strong></li></ul>'},
+  portfoyDeger:{icon:'💎',title:'Portföy Değeri',sub:'Anlık BTC fiyatına göre toplam değer',body:'<p>Elindeki BTC\'nin anlık piyasa değeri.</p><ul><li>Bu rakam gerçekleşmemiş değerdir — satana kadar kâğıt üzerinde.</li><li>Toplam yatırımınla karşılaştırarak gerçek K/Z\'ni görebilirsin.</li></ul>'},
+  priceChart:{icon:'📈',title:'Fiyat Grafiği',sub:'Alımlarına göre fiyat hareketleri',body:'<p><strong>Turuncu</strong> = işlem fiyatı | <strong>Turkuaz</strong> = ortalama maliyet</p><ul><li>Ortalama maliyet çizgisi aşağı iniyorsa strateji çalışıyor!</li><li>Fiyat ortalama altına düşünce → <strong>alım zamanı!</strong></li></ul>'},
+  pieChart:{icon:'🧩',title:'Sermaye Dağılımı',sub:'Aktif sermaye vs çekilen kâr',body:'<p><strong>Turuncu</strong> = aktif yatırım | <strong>Yeşil</strong> = realize kâr</p><ul><li>Yeşil dilim büyürken turuncu dilim korunabilir — işte mekanik stratejinin gücü!</li></ul>'},
+  barChart:{icon:'💰',title:'Alım Geçmişi',sub:'Her alımda harcanan tutar',body:'<p>Her çubuğun yüksekliği o alımdaki ₺ miktarı.</p><ul><li>Düşüş ne kadar derindeyse alım miktarı o kadar büyür.</li><li><strong>Mavi</strong> = ilk alım | <strong>Turuncu</strong> = DCA alımları</li></ul>'},
+};
+function showInfoModal(key){
+  var info=INFO[key]; if(!info)return;
+  document.getElementById('infoIcon').textContent=info.icon;
+  document.getElementById('infoTitle').textContent=info.title;
+  document.getElementById('infoSub').textContent=info.sub;
+  document.getElementById('infoBody').innerHTML=info.body;
+  showModal('infoModal');
+}
+
+/* ═══════════════════════════════════════
+   STEPS (alım adımları)
+═══════════════════════════════════════ */
+function saveSteps(){
+  buySteps.s1=parseInt(document.getElementById('step1').value)||20000;
+  buySteps.s2=parseInt(document.getElementById('step2').value)||30000;
+  buySteps.s3=parseInt(document.getElementById('step3').value)||40000;
+  buySteps.init=parseInt(document.getElementById('stepInit').value)||20000;
+  localStorage.setItem('btc_steps',JSON.stringify(buySteps));
+  updateStepsPreview();
+  showToast('⚙️ Alım adımları güncellendi!','success');
+}
+function updateStepsPreview(){
+  document.getElementById('step1').value=buySteps.s1;
+  document.getElementById('step2').value=buySteps.s2;
+  document.getElementById('step3').value=buySteps.s3;
+  document.getElementById('stepInit').value=buySteps.init;
+  document.getElementById('stepsPreview').innerHTML=`
+    İlk alım: <strong style="color:var(--gold)">${fmtCur(buySteps.init)}</strong> |
+    0%→-10%: <strong style="color:var(--gold)">${fmtCur(buySteps.s1)}</strong> |
+    -10%→-25%: <strong style="color:var(--gold)">${fmtCur(buySteps.s2)}</strong> |
+    -25%+: <strong style="color:var(--gold)">${fmtCur(buySteps.s3)}</strong>
+  `;
+}
+
+/* ═══════════════════════════════════════
+   PORTFOLIOS
+═══════════════════════════════════════ */
+function renderPortfolioTabs(){
+  var row=document.getElementById('ptabRow');
+  var nameEl=document.getElementById('activePortfolioName');
+  if(row) row.innerHTML=portfolios.map(p=>`<div class="ptab ${p.id===activePortfolioId?'active':''}" onclick="switchPortfolio('${p.id}')">${p.name}</div>`).join('');
+  if(nameEl) nameEl.textContent=portfolios.find(p=>p.id===activePortfolioId)?.name||'';
+}
+function switchPortfolio(id){
+  activePortfolioId=id;
+  localStorage.setItem('btc_active_portfolio',id);
+  renderAll();
+  showToast('📁 Portföy: '+portfolios.find(p=>p.id===id)?.name,'success');
+}
+function addPortfolio(){
+  var name=document.getElementById('newPortfolioName').value.trim();
+  if(!name){showToast('Portföy adı gir!','error');return;}
+  var id='p_'+Date.now();
+  portfolios.push({id,name});
+  allTransactions[id]=[];
+  localStorage.setItem('btc_portfolios',JSON.stringify(portfolios));
+  saveLocal();
+  document.getElementById('newPortfolioName').value='';
+  switchPortfolio(id);
+  showToast('🏦 '+name+' portföyü oluşturuldu!','success');
+}
+
+/* ═══════════════════════════════════════
+   JOURNAL
+═══════════════════════════════════════ */
+function saveJournalEntry(){
+  var text=document.getElementById('journalInput').value.trim();
+  if(!text){showToast('Bir şeyler yaz!','error');return;}
+  journalEntries.unshift({date:new Date().toLocaleString('tr-TR'),text});
+  if(journalEntries.length>20) journalEntries=journalEntries.slice(0,20);
+  localStorage.setItem('btc_journal',JSON.stringify(journalEntries));
+  document.getElementById('journalInput').value='';
+  renderJournal();
+  showToast('📝 Günlük kaydedildi!','success');
+}
+function renderJournal(){
+  var el=document.getElementById('journalList');
+  if(!el) return;
+  if(!journalEntries.length){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Henüz günlük girişi yok.</div>';return;}
+  el.innerHTML=journalEntries.slice(0,5).map(j=>`
+    <div class="journal-item">
+      <div class="journal-meta"><span class="journal-date">${j.date}</span></div>
+      <div class="journal-note">${j.text}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════
+   FEAR & GREED
+═══════════════════════════════════════ */
+async function fetchFearGreed(){
+  try {
+    var res=await fetch('https://api.alternative.me/fng/?limit=1');
+    var data=await res.json();
+    var val=parseInt(data.data[0].value);
+    var classification=data.data[0].value_classification;
+    document.getElementById('fgValue').textContent=val;
+    document.getElementById('fgValue').style.color=val<25?'var(--red)':val<45?'#f7931a':val<55?'#ffd600':val<75?'#7bc67e':'var(--green)';
+    document.getElementById('fgLabel').textContent=classification;
+    document.getElementById('fgNeedle').style.left=(val)+'%';
+    var advice=val<25?'😱 Aşırı korku! Tarihsel olarak bu bölge en iyi alım fırsatlarını sunar. DCA stratejin tam burada parlıyor!':
+               val<45?'😰 Korku hâkim. Piyasa temkinli — alım için elverişli bölge.':
+               val<55?'😐 Nötr piyasa. Dengeli bir ortam, mekanik strateji devam.':
+               val<75?'😏 Açgözlülük başlıyor. Kâr realizasyonu zamanı yaklaşıyor olabilir.':
+               '🤑 Aşırı açgözlülük! Herkes alırken satmayı düşün — kâr realize et!';
+    document.getElementById('fgAdvice').textContent=advice;
+  } catch {
+    document.getElementById('fgLabel').textContent='Veri alınamadı';
+  }
+}
+
+/* ═══════════════════════════════════════
+   SCENARIO
+═══════════════════════════════════════ */
+function runScenario(){
+  var targetPrice=parsePrice(document.getElementById('scenarioPrice').value);
+  if(!targetPrice){showToast('Hedef fiyat gir!','error');return;}
+  var state=computeState(getTxs());
+  if(!state.totalBtc){showToast('Önce işlem kaydet!','error');return;}
+  var portfolioVal=state.totalBtc*targetPrice;
+  var profit=portfolioVal-state.totalInvested;
+  var pct=((targetPrice-state.avgCost)/state.avgCost)*100;
+  document.getElementById('scenarioResult').innerHTML=`
+    <div class="sim-result">
+      <div class="sim-row"><span>Hedef Fiyat</span><span class="text-gold mono">${fmtCur(targetPrice,0)}</span></div>
+      <div class="sim-row"><span>Portföy Değeri</span><span class="text-green mono">${fmtCur(portfolioVal,0)}</span></div>
+      <div class="sim-row"><span>Kâr</span><span class="text-green mono">+${fmtCur(profit,0)}</span></div>
+      <div class="sim-row"><span>K/Z %</span><span class="text-green mono">+${fmt(pct,1)}%</span></div>
+      <div class="sim-row"><span>X Katsayısı</span><span class="text-teal mono">${(targetPrice/state.avgCost).toFixed(2)}x</span></div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════
+   CRISIS SIMULATOR
+═══════════════════════════════════════ */
+function runCrisis(dropPct){
+  var state=computeState(getTxs());
+  var lastTx=getTxs().slice(-1)[0];
+  if(!lastTx){showToast('Önce işlem kaydet!','error');return;}
+  var currentPrice=lastTx.price;
+  var newPrice=currentPrice*(1-dropPct/100);
+  var newVal=state.totalBtc*newPrice;
+  var newPct=((newPrice-state.avgCost)/state.avgCost)*100;
+  var nextBuy=dropPct<=10?buySteps.s1:dropPct<=25?buySteps.s2:buySteps.s3;
+  document.getElementById('crisisResult').innerHTML=`
+    <div class="sim-result">
+      <div class="sim-row"><span>-%${dropPct} sonrası fiyat</span><span class="text-red mono">${fmtCur(newPrice,0)}</span></div>
+      <div class="sim-row"><span>Portföy Değeri</span><span class="text-red mono">${fmtCur(newVal,0)}</span></div>
+      <div class="sim-row"><span>K/Z %</span><span class="${newPct>=0?'text-green':'text-red'} mono">${fmt(newPct,1)}%</span></div>
+      <div class="sim-row"><span>Mekanik Alım</span><span class="text-gold mono">${fmtCur(nextBuy,0)}</span></div>
+      <div style="margin-top:8px;font-size:.78rem;color:var(--dim);line-height:1.5">
+        ${newPct<0?'😤 Kâğıt zarar! Ama sen paniklemiyorsun — mekanik strateji devreye giriyor.':'😊 Hâlâ kârdasın! Bitcoin güçlü.'}
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════
+   RETIREMENT CALCULATOR
+═══════════════════════════════════════ */
+function runRetirement(){
+  var monthly=parseInt(document.getElementById('retMonthly').value)||0;
+  var years=parseInt(document.getElementById('retYears').value)||0;
+  var growth=parseFloat(document.getElementById('retGrowth').value)||30;
+  var btcPrice=parsePrice(document.getElementById('retBtcPrice').value)||3500000;
+  if(!monthly||!years){showToast('Tüm alanları doldur!','error');return;}
+  var totalInvested=monthly*12*years;
+  var r=growth/100;
+  var futureVal=monthly*12*((Math.pow(1+r,years)-1)/r)*(1+r);
+  var btcAccumulated=0;
+  var monthlyBtc=monthly/btcPrice;
+  for(var i=0;i<years*12;i++){
+    btcAccumulated+=monthlyBtc;
+    btcPrice*=Math.pow(1+r,1/12);
+  }
+  var finalBtcPrice=btcPrice;
+  var finalValue=btcAccumulated*finalBtcPrice;
+  document.getElementById('retirementResult').innerHTML=`
+    <div class="sim-result" style="margin-top:10px">
+      <div class="sim-row"><span>Toplam Yatırım</span><span class="text-gold mono">${fmtCur(totalInvested,0)}</span></div>
+      <div class="sim-row"><span>Tahmini BTC</span><span class="text-teal mono">${btcAccumulated.toFixed(4)}</span></div>
+      <div class="sim-row"><span>${years} yıl sonra BTC fiyatı</span><span class="text-blue mono">${fmtCur(finalBtcPrice,0)}</span></div>
+      <div class="sim-row"><span>Tahmini Portföy Değeri</span><span class="text-green mono">${fmtCur(finalValue,0)}</span></div>
+      <div class="sim-row"><span>Katsayı</span><span class="text-green mono">${(finalValue/totalInvested).toFixed(1)}x</span></div>
+      <div style="margin-top:8px;font-size:.75rem;color:var(--muted)">*Yıllık %${growth} büyüme varsayımıyla hesaplanmıştır. Gerçek sonuçlar değişir.</div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════
+   WHAT IF
+═══════════════════════════════════════ */
+var BTC_HISTORY={
+  2020:{price:25000*35}, 2021:{price:70000*9.5}, 2022:{price:16000*18}, 2023:{price:44000*30}
+};
+function runWhatIf(year, defaultAmount){
+  var amount=parseInt(document.getElementById('whatifAmount').value)||defaultAmount;
+  var startPrice=BTC_HISTORY[year]?.price||500000;
+  var currentPrice=3500000;
+  var months=Math.floor((2025-year)*12);
+  var btcAccumulated=0;
+  var totalInvested=0;
+  for(var i=0;i<months;i++){
+    var p=startPrice*Math.pow(currentPrice/startPrice,i/months);
+    btcAccumulated+=amount/p;
+    totalInvested+=amount;
+  }
+  var currentVal=btcAccumulated*currentPrice;
+  document.getElementById('whatifResult').innerHTML=`
+    <div class="sim-result">
+      <div class="sim-row"><span>${year}'den bu yana aylık ${fmtCur(amount)}</span><span></span></div>
+      <div class="sim-row"><span>Toplam Yatırım</span><span class="text-gold mono">${fmtCur(totalInvested,0)}</span></div>
+      <div class="sim-row"><span>Biriken BTC</span><span class="text-teal mono">${btcAccumulated.toFixed(4)}</span></div>
+      <div class="sim-row"><span>Bugünkü Değer</span><span class="text-green mono">${fmtCur(currentVal,0)}</span></div>
+      <div class="sim-row"><span>Katsayı</span><span class="text-green mono">${(currentVal/totalInvested).toFixed(1)}x 🚀</span></div>
+      <div style="margin-top:8px;font-size:.75rem;color:var(--dim)">Geç kalmadın — şimdiden başlamak her zaman en iyi zamandır! 💪</div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════
+   DELETE
+═══════════════════════════════════════ */
+function askDelete(index){
+  deletePendingIndex=index;
+  var tx=getTxs()[index];
+  document.getElementById('deleteDesc').textContent=`#${index+1} işlemi (${tx.date.split(' ')[0]}, ${fmtCur(tx.price,0)}) silinecek.`;
+  showModal('deleteModal');
+}
+function confirmDeleteTx(){
+  if(deletePendingIndex===null)return;
+  var txs=getTxs(); txs.splice(deletePendingIndex,1); setTxs(txs);
+  deletePendingIndex=null;
+  // Rozetleri yeniden hesapla
+  earnedBadges = [];
+  localStorage.removeItem('btc_badges');
+  saveLocal(); renderAll(); closeModal('deleteModal');
+  showToast('🗑 İşlem silindi.','warning');
+}
+
+/* ═══════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════ */
+function saveLocal(){
+  localStorage.setItem('btc_all_txs',JSON.stringify(allTransactions));
+  localStorage.setItem('btc_portfolios',JSON.stringify(portfolios));
+}
+function exportData(){
+  var blob=new Blob([JSON.stringify(getTxs(),null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='btc_takip_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  showToast('📦 Dışa aktarıldı.','success');
+}
+function importData(e){
+  var file=e.target.files[0]; if(!file)return;
+  var reader=new FileReader();
+  reader.onload=ev=>{
+    try {
+      var data=JSON.parse(ev.target.result);
+      if(!Array.isArray(data))throw new Error();
+      setTxs(data); saveLocal(); renderAll();
+      showToast('✅ '+data.length+' işlem yüklendi!','success');
+    } catch{showToast('Geçersiz JSON!','error');}
+  };
+  reader.readAsText(file); e.target.value='';
+}
+
+/* ═══════════════════════════════════════
+   GMAIL
+═══════════════════════════════════════ */
+function openGmailExport(){
+  var state=computeState(getTxs());
+  var now=new Date().toLocaleDateString('tr-TR');
+  var subject=encodeURIComponent('BTC Portföy Özeti — '+now);
+  var lines=['📊 BTC TAKİP ÖZET — '+now,'─'.repeat(30),'💰 Ana Para   : '+fmtCur(state.totalInvested),'📊 Ort. Maliyet: '+fmtCur(state.avgCost,0),'🪙 BTC         : '+fmtBtc(state.totalBtc),'💸 Çekilen     : '+fmtCur(state.totalWithdrawn,0),'📋 İşlem Sayısı: '+getTxs().length,'','Bu rapor Mekanik BTC Takip uygulamasından oluşturulmuştur.'];
+  var body=encodeURIComponent(lines.join('\n'));
+  var gmailUrl='https://mail.google.com/mail/?view=cm&fs=1&su='+subject+'&body='+body;
+  document.getElementById('gmailSub').textContent=getTxs().length+' işlem • '+fmtCur(state.totalInvested)+' toplam';
+  document.getElementById('gmailBody').innerHTML=`<div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.7;color:var(--dim);background:rgba(255,255,255,.04);border-radius:8px;padding:10px;white-space:pre-wrap;margin-bottom:12px">${lines.join('\n')}</div>`;
+  document.getElementById('gmailActions').innerHTML=`
+    <a href="${gmailUrl}" target="_blank" class="btn btn-gold btn-sm" style="text-decoration:none" onclick="closeModal('gmailModal')">📧 Gmail'de Aç</a>
+    <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(window._ptxt).then(()=>showToast('📋 Kopyalandı!','success'))">📋 Kopyala</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeModal('gmailModal')">Kapat</button>
+  `;
+  window._ptxt=lines.join('\n');
+  showModal('gmailModal');
+}
+
+/* ═══════════════════════════════════════
+   DRIVE SYNC
+═══════════════════════════════════════ */
+function confirmDriveSave(){
+  var txCount=getTxs().length;
+  var state=computeState(getTxs());
+  document.getElementById('driveSaveConfirmSub').textContent=txCount+' işlem • '+fmtCur(state.totalInvested)+' toplam yatırım';
+  showModal('driveSaveConfirmModal');
+}
+function confirmDriveLoad(){
+  showModal('driveLoadConfirmModal');
+}
+async function driveSaveConfirmed(){
+  var btn=document.getElementById('driveSaveBtn');
+  btn.textContent='⏳'; btn.disabled=true;
+  try {
+    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactions:allTransactions,portfolios,goal:userGoal,investDay,steps:buySteps}),mode:'no-cors'});
+    showToast('☁️ Drive\'a kaydedildi!','success');
+    btn.textContent='✅'; btn.classList.add('saving');
+    setTimeout(()=>{btn.textContent='☁️ Kaydet';btn.disabled=false;btn.classList.remove('saving');},2500);
+  } catch(err){
+    showToast('Drive hatası: '+err.message,'error');
+    btn.textContent='☁️ Kaydet'; btn.disabled=false;
+  }
+}
+async function driveLoadConfirmed(){
+  var btn=document.getElementById('driveLoadBtn');
+  btn.textContent='⏳'; btn.disabled=true;
+  try {
+    var res=await fetch(DRIVE_URL+'?t='+Date.now());
+    var text=await res.text();
+    var data=JSON.parse(text);
+    if(data.transactions){ allTransactions=data.transactions; }
+    else if(Array.isArray(data)){ allTransactions={default:data}; }
+    if(data.portfolios) portfolios=data.portfolios;
+    if(data.goal) { userGoal=data.goal; localStorage.setItem('btc_goal',JSON.stringify(userGoal)); }
+    if(data.investDay) { investDay=data.investDay; localStorage.setItem('btc_invest_day',investDay); }
+    if(data.steps) { buySteps=data.steps; localStorage.setItem('btc_steps',JSON.stringify(buySteps)); }
+    saveLocal(); renderAll();
+    showToast('✅ Drive\'dan yüklendi!','success');
+    btn.textContent='✅'; btn.classList.add('saving');
+    setTimeout(()=>{btn.textContent='🔄 Yükle';btn.disabled=false;btn.classList.remove('saving');},2500);
+  } catch(err){
+    showToast('Drive\'dan yüklenemedi.','error');
+    btn.textContent='🔄 Yükle'; btn.disabled=false;
+  }
+}
+
+/* ═══════════════════════════════════════
+   TOAST & CONFETTI
+═══════════════════════════════════════ */
+function showToast(msg,type='success'){
+  var c=document.getElementById('toast-container');
+  var el=document.createElement('div');
+  el.className='toast '+type;
+  el.innerHTML='<span>'+msg+'</span>';
+  c.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='.3s';setTimeout(()=>el.remove(),320);},3000);
+}
+function spawnConfetti(){
+  var colors=['#f7931a','#ffb347','#00c7b1','#00e896','#3b82f6','#fff'];
+  var canvas=document.createElement('canvas');
+  canvas.className='burst'; canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  document.body.appendChild(canvas);
+  var ctx=canvas.getContext('2d');
+  var particles=Array.from({length:55},()=>({x:Math.random()*canvas.width,y:canvas.height*.35+Math.random()*canvas.height*.3,r:3+Math.random()*5,dx:(Math.random()-.5)*6,dy:-4-Math.random()*5,color:colors[Math.floor(Math.random()*colors.length)],alpha:1}));
+  var frame;
+  (function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{p.x+=p.dx;p.y+=p.dy;p.dy+=.14;p.alpha-=.014;if(p.alpha<=0)return;ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});
+    if(particles.some(p=>p.alpha>0)){frame=requestAnimationFrame(draw);}else{cancelAnimationFrame(frame);canvas.remove();}
+  })();
+  setTimeout(()=>canvas.remove(),2800);
+}
+
+/* ═══════════════════════════════════════
+   ANAPARA KOVASI
+═══════════════════════════════════════ */
+var KOVA_MAX = 1000000;
+var KOVA_STEP = 50000;
+
+function renderKova() {
+  var state = computeState(getTxs());
+  var anapara = state.totalInvested;
+  var pct = Math.min(100, (anapara / KOVA_MAX) * 100);
+  var el = document.getElementById('kovaContainer');
+  if (!el) return;
+
+  // Kilometre taşları
+  var milestones = [];
+  for (var m = KOVA_STEP; m <= KOVA_MAX; m += KOVA_STEP) {
+    milestones.push(m);
+  }
+
+  // SVG kova çiz
+  var fillPct = Math.min(100, pct);
+  var fillHeight = (fillPct / 100) * 120;
+  var fillY = 140 - fillHeight;
+  // Renk: doluluk oranına göre
+  var fillColor = fillPct < 25 ? '#3b82f6' : fillPct < 50 ? '#00d4bc' : fillPct < 75 ? '#f7931a' : '#f7931a';
+  var glowColor = fillPct < 25 ? 'rgba(59,130,246,.3)' : fillPct < 50 ? 'rgba(0,212,188,.3)' : 'rgba(247,147,26,.3)';
+
+  // Sonraki kilometre taşı
+  var nextMilestone = milestones.find(m => m > anapara) || KOVA_MAX;
+  var prevMilestone = [...milestones].reverse().find(m => m <= anapara) || 0;
+  var segmentPct = prevMilestone === nextMilestone ? 100 : ((anapara - prevMilestone) / (nextMilestone - prevMilestone)) * 100;
+
+  var svg = `
+    <svg width="140" height="170" viewBox="0 0 140 170" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="kovaBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(255,255,255,.06)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,.02)"/>
+        </linearGradient>
+        <linearGradient id="kovaFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${fillColor}" stop-opacity=".9"/>
+          <stop offset="100%" stop-color="${fillColor}" stop-opacity=".6"/>
+        </linearGradient>
+        <clipPath id="kovaClip">
+          <path d="M20,20 L120,20 L105,150 L35,150 Z"/>
+        </clipPath>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Kova gövdesi arka plan -->
+      <path d="M20,20 L120,20 L105,150 L35,150 Z" fill="url(#kovaBg)" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
+      <!-- Su dolumu -->
+      <g clip-path="url(#kovaClip)">
+        <rect x="0" y="${fillY}" width="140" height="${fillHeight + 20}" fill="url(#kovaFill)" opacity=".85"/>
+        <!-- Su yüzeyi dalgası -->
+        ${fillPct > 2 ? `<path d="M10,${fillY} Q35,${fillY-4} 70,${fillY} Q105,${fillY+4} 130,${fillY}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>` : ''}
+      </g>
+      <!-- Kova kenarı üst çizgi -->
+      <path d="M20,20 L120,20 L105,150 L35,150 Z" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+      <!-- Kova sapı -->
+      <path d="M30,20 Q70,5 110,20" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="2" stroke-linecap="round"/>
+      <!-- Yüzde yazısı -->
+      <text x="70" y="${fillPct > 15 ? fillY + 16 : fillY - 8}" text-anchor="middle" fill="${fillPct > 15 ? 'white' : fillColor}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="900" filter="url(#glow)">${fillPct.toFixed(1)}%</text>
+      <!-- Işık efekti -->
+      <path d="M25,25 L50,25 L45,60 L20,60 Z" fill="rgba(255,255,255,.04)"/>
+    </svg>
+  `;
+
+  // Sonraki taşa kalan
+  var kalan = nextMilestone - anapara;
+  var kalanPct = segmentPct.toFixed(1);
+
+  // Taşları listele — sadece yakın olanları göster
+  var nearMilestones = milestones.filter(m => {
+    return m <= anapara + 250000 && m >= anapara - 100000;
+  }).slice(0, 8);
+
+  var milestonesHtml = nearMilestones.map(m => {
+    var isReached = anapara >= m;
+    var isNext = m === nextMilestone;
+    var icon = isReached ? '✅' : isNext ? '🎯' : '⚪';
+    return `<div class="kova-milestone ${isReached?'reached':''} ${isNext?'next':''}">
+      <span class="kova-milestone-icon">${icon}</span>
+      <span class="kova-milestone-label">${fmtCur(m, 0)}</span>
+      <span class="kova-milestone-val">${isReached ? 'Ulaşıldı! 🎉' : isNext ? 'Hedef · '+fmtCur(kalan,0)+' kaldı' : fmtCur(m - anapara,0)+' kaldı'}</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="kova-svg-wrap">${svg}</div>
+    <div class="kova-info">
+      <div class="kova-amount">${fmtCur(anapara, 0)}</div>
+      <div class="kova-pct">${KOVA_MAX === 1000000 ? '1.000.000 ₺ hedefine' : ''} ${fillPct.toFixed(1)}% doldu</div>
+      ${nextMilestone <= KOVA_MAX ? `<div style="font-size:.75rem;color:var(--teal);margin-top:4px;font-weight:600">Sonraki taş: ${fmtCur(nextMilestone,0)} · ${fmtCur(kalan,0)} kaldı (bu segmentte %${kalanPct})</div>` : '<div style="font-size:.75rem;color:var(--gold);font-weight:800">🏆 HEDEFE ULAŞILDI!</div>'}
+    </div>
+    <div class="kova-milestones">${milestonesHtml}</div>
+    ${anapara === 0 ? '<div style="text-align:center;font-size:.78rem;color:var(--muted);margin-top:8px">İlk alımı yap, kova dolmaya başlasın! 🌱</div>' : ''}
+  `;
+}
+
+/* ═══════════════════════════════════════
+   DÖNGÜ KAYIT & ANALİZİ
+═══════════════════════════════════════ */
+var cycleHistory = JSON.parse(localStorage.getItem('btc_cycles') || '[]');
+
+function recordCycle(tx, state, fgValue) {
+  // Son satıştan bu yana geçen alımları bul
+  var txs = getTxs();
+  var lastSellIdx = -1;
+  for (var i = txs.length - 2; i >= 0; i--) { // -2 çünkü şu an kaydedilen dahil değil
+    if (txs[i].type === 'SELL') { lastSellIdx = i; break; }
+  }
+  var cycleStart = lastSellIdx === -1 ? txs[0] : txs[lastSellIdx + 1];
+  if (!cycleStart) return;
+
+  var startDate = new Date(cycleStart.id);
+  var endDate = new Date(tx.id);
+  var durationDays = Math.floor((endDate - startDate) / (1000*60*60*24));
+
+  var buysSinceSell = lastSellIdx === -1
+    ? txs.filter(t => t.type !== 'SELL')
+    : txs.slice(lastSellIdx + 1).filter(t => t.type !== 'SELL');
+
+  var totalInvestedThisCycle = buysSinceSell.reduce((s, t) => s + t.amount, 0);
+  var profitPct = tx.pct || 0;
+
+  var cycle = {
+    id: Date.now(),
+    date: new Date().toLocaleString('tr-TR'),
+    startPrice: cycleStart.price,
+    endPrice: tx.price,
+    durationDays,
+    profitPct,
+    profitAmount: tx.amount,
+    anaparaEkleme: tx.anaparaEkleme || 0,
+    sellMode: tx.sellMode || 'FULL',
+    buyCount: buysSinceSell.length,
+    totalInvestedThisCycle,
+    fgAtSell: fgValue || null,
+  };
+  cycleHistory.push(cycle);
+  localStorage.setItem('btc_cycles', JSON.stringify(cycleHistory));
+}
+
+async function buildCycleAnalysis(currentPct, currentPrice, state) {
+  var el = document.getElementById('cycleBandBody');
+  if (!el) return;
+
+  // Dış veri: Fear & Greed + 7 günlük değişim
+  var fgNow = 50, change7d = 0;
+  try {
+    var fgRes = await fetch('https://api.alternative.me/fng/?limit=1');
+    var fgData = await fgRes.json();
+    fgNow = parseInt(fgData.data[0].value);
+  } catch {}
+  try {
+    var priceRes = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=try&days=7');
+    var priceData = await priceRes.json();
+    if (priceData.prices && priceData.prices.length > 1) {
+      var first = priceData.prices[0][1];
+      var last = priceData.prices[priceData.prices.length-1][1];
+      change7d = ((last - first) / first) * 100;
+    }
+  } catch {}
+
+  // Kendi döngü geçmişi analizi
+  var hasHistory = cycleHistory.length >= 3;
+  var avgDuration = hasHistory ? Math.round(cycleHistory.reduce((s,c)=>s+c.durationDays,0)/cycleHistory.length) : null;
+  var avgProfit = hasHistory ? (cycleHistory.reduce((s,c)=>s+c.profitPct,0)/cycleHistory.length) : null;
+  var bestCycle = hasHistory ? cycleHistory.reduce((a,b)=>a.profitPct>b.profitPct?a:b) : null;
+  var waitedMore = hasHistory ? cycleHistory.filter(c=>c.profitPct>currentPct).length : 0;
+  var waitedMorePct = hasHistory ? Math.round((waitedMore/cycleHistory.length)*100) : null;
+
+  // Karar algoritması
+  var sellScore = 0; // pozitif = sat, negatif = bekle
+  var reasons = [];
+
+  // F&G
+  if (fgNow >= 75) { sellScore += 3; reasons.push({icon:'🤑', text:'Aşırı açgözlülük ('+fgNow+') — tarihsel tepe bölgesi, satış zamanı', side:'sat'}); }
+  else if (fgNow >= 60) { sellScore += 1; reasons.push({icon:'😏', text:'Açgözlülük bölgesi ('+fgNow+') — piyasa ısınıyor', side:'sat'}); }
+  else if (fgNow <= 25) { sellScore -= 2; reasons.push({icon:'😱', text:'Aşırı korku ('+fgNow+') — bu dip değil, piyasa daha düşebilir', side:'bekle'}); }
+  else if (fgNow <= 45) { sellScore -= 1; reasons.push({icon:'😟', text:'Korku bölgesi ('+fgNow+') — yükseliş henüz başlıyor olabilir', side:'bekle'}); }
+  else { reasons.push({icon:'😐', text:'Nötr duygu ('+fgNow+') — karar vermek için yeterli sinyal yok', side:'nötr'}); }
+
+  // 7 günlük trend
+  if (change7d >= 20) { sellScore += 2; reasons.push({icon:'🚀', text:'7 günde +%'+fmt(change7d,1)+' — güçlü yükseliş, zirve yaklaşıyor olabilir', side:'sat'}); }
+  else if (change7d >= 8) { sellScore += 1; reasons.push({icon:'📈', text:'7 günde +%'+fmt(change7d,1)+' — momentum güçlü ama sürebilir', side:'nötr'}); }
+  else if (change7d <= -10) { sellScore -= 2; reasons.push({icon:'📉', text:'7 günde -%'+fmt(Math.abs(change7d),1)+' — düşüş içinde satış erken olur', side:'bekle'}); }
+  else if (change7d <= -3) { sellScore -= 1; reasons.push({icon:'😬', text:'7 günde -%'+fmt(Math.abs(change7d),1)+' — hafif düşüş, bekleme mantıklı', side:'bekle'}); }
+
+  // Kâr seviyesi
+  if (currentPct >= 50) { sellScore += 3; reasons.push({icon:'💎', text:'+%'+fmt(currentPct,1)+' kâr — çok güçlü seviye, realize et', side:'sat'}); }
+  else if (currentPct >= 25) { sellScore += 1; reasons.push({icon:'✨', text:'+%'+fmt(currentPct,1)+' kâr — iyi bir seviye', side:'nötr'}); }
+  else if (currentPct >= 10) { sellScore += 0; reasons.push({icon:'👀', text:'+%'+fmt(currentPct,1)+' kâr — makul seviye, daha beklenebilir', side:'bekle'}); }
+  else { sellScore -= 1; reasons.push({icon:'⚠️', text:'+%'+fmt(currentPct,1)+' kâr — henüz çok düşük, beklemek mantıklı', side:'bekle'}); }
+
+  // Kendi geçmişi
+  if (hasHistory) {
+    if (waitedMorePct !== null && waitedMorePct >= 60) {
+      sellScore -= 1;
+      reasons.push({icon:'📚', text:'Geçmiş '+cycleHistory.length+' döngünde %'+waitedMorePct+'si bu seviyeden daha fazla kazandı (ort. +%'+fmt(avgProfit,1)+')', side:'bekle'});
+    } else if (waitedMorePct !== null && waitedMorePct <= 35) {
+      sellScore += 1;
+      reasons.push({icon:'📚', text:'Geçmiş döngülerin %'+(100-waitedMorePct)+'i bu seviyeden daha az kazandı — şimdi satmak geçmişte daha iyi çalıştı', side:'sat'});
+    }
+    if (avgDuration !== null) {
+      reasons.push({icon:'⏱️', text:'Ortalama döngü süren '+avgDuration+' gün — bu bilgi bir sonraki döngüde daha anlamlı olacak', side:'nötr'});
+    }
+  } else {
+    reasons.push({icon:'🌱', text:'Henüz '+cycleHistory.length+' döngü var. 3+ döngüden sonra kendi geçmişin de analize girer.', side:'nötr'});
+  }
+
+  // Sonuç kararı
+  var decision, decisionClass, decisionIcon;
+  if (sellScore >= 4) { decision='HEMEN SAT'; decisionClass='cycle-signal-bull'; decisionIcon='💰'; }
+  else if (sellScore >= 2) { decision='SAT'; decisionClass='cycle-signal-bull'; decisionIcon='✅'; }
+  else if (sellScore >= 0) { decision='BEKLEYEBİLİRSİN'; decisionClass='cycle-signal-neutral'; decisionIcon='⏸️'; }
+  else if (sellScore >= -2) { decision='BEKLE'; decisionClass='cycle-signal-wait'; decisionIcon='⏳'; }
+  else { decision='KESİNLİKLE BEKLE'; decisionClass='cycle-signal-bear'; decisionIcon='🛑'; }
+
+  var reasonsHtml = reasons.map(r => `
+    <div style="display:flex;gap:7px;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <span style="flex-shrink:0">${r.icon}</span>
+      <span style="font-size:.78rem;color:var(--dim);line-height:1.5">${r.text}</span>
+      <span style="flex-shrink:0;font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:99px;${r.side==='sat'?'background:rgba(0,240,160,.15);color:var(--green)':r.side==='bekle'?'background:rgba(255,85,118,.12);color:var(--red)':'background:rgba(255,255,255,.06);color:var(--muted)'}">${r.side==='sat'?'SAT':r.side==='bekle'?'BEKLE':'NÖTR'}</span>
+    </div>
+  `).join('');
+
+  var historyHtml = hasHistory ? `
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
+      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Geçmiş Döngülerin</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:.6rem;color:var(--muted);margin-bottom:2px">Döngü</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--gold)">${cycleHistory.length}</div>
+        </div>
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:.6rem;color:var(--muted);margin-bottom:2px">Ort. Kâr</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--green)">+%${fmt(avgProfit,1)}</div>
+        </div>
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:.6rem;color:var(--muted);margin-bottom:2px">Ort. Süre</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--teal)">${avgDuration}g</div>
+        </div>
+      </div>
+    </div>
+  ` : '';
+
+  el.innerHTML = `
+    <div class="cycle-signal ${decisionClass}">
+      <div class="cycle-signal-title">${decisionIcon} ${decision} <span style="font-size:.72rem;font-weight:400;opacity:.7">(Skor: ${sellScore>0?'+':''}${sellScore})</span></div>
+      <div style="font-size:.78rem;line-height:1.6">${reasons.filter(r=>r.side!=='nötr').slice(0,2).map(r=>r.text).join(' — ')}</div>
+    </div>
+    <div>${reasonsHtml}</div>
+    ${historyHtml}
+  `;
+
+  document.getElementById('cycleBand').classList.add('open');
+  return fgNow;
+}
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+applyTheme();
+renderAll();
+fetchFearGreed();
+startBtcAutoRefresh();
+
+// Dakikada bir canlı veri güncelle
+setInterval(async () => {
+  try {
+    var price = await getLiveBtcTry();
+    if (!price) return;
+    var state = computeState(getTxs());
+    var txs = getTxs();
+
+    // Port. Değer / Gerç. K/Z kartı
+    var portVal = state.totalBtc * price;
+    var unrealizedKZ = portVal - state.totalInvested;
+    var kzCard = document.getElementById('cardPortfoyDeger');
+    kzCard.textContent = (unrealizedKZ>=0?'+':'')+fmtCur(unrealizedKZ,0);
+    kzCard.className = 'tile-val mono '+(unrealizedKZ>=0?'teal':'red');
+    document.getElementById('cardPortfoyDegerSub').textContent = '📡 Canlı · '+fmtCur(price,0);
+
+    // K/Z % kartı
+    if (state.avgCost) {
+      var pct = ((price - state.avgCost) / state.avgCost) * 100;
+      var el = document.getElementById('cardPL');
+      el.textContent = (pct>=0?'+':'')+fmt(pct,2)+'%';
+      el.className = 'tile-val mono '+(pct>=0?'green':'red');
+      document.getElementById('cardPLSub').textContent = '📡 Canlı · '+fmtCur(price,0);
+    }
+
+    // Gelişmiş istatistikler
+    if (txs.length) {
+      var unrealized = state.totalBtc * price - state.totalInvested;
+      var advEl = document.getElementById('advStatsUnrealized');
+      if (advEl) {
+        advEl.textContent = (unrealized>=0?'+':'')+fmtCur(unrealized,0);
+        advEl.className = unrealized>=0?'text-green mono':'text-red mono';
+      }
+      var priceEl = document.getElementById('advStatslivePrice');
+      if (priceEl) priceEl.textContent = '📡 '+fmtCur(price,0);
+    }
+
+    // Emeklilik fiyat alanı
+    var retEl = document.getElementById('retBtcPrice');
+    if (retEl && !retEl.dataset.userEdited) {
+      retEl.value = new Intl.NumberFormat('tr-TR').format(price);
+    }
+  } catch { /* sessiz hata */ }
+}, 60000);
+</script>
+</body>
+</html>
