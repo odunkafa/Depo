@@ -482,7 +482,7 @@ tbody tr:active{background:var(--card2);}
 .notif-toggle input:checked + .notif-slider:before { transform:translateX(20px); }
 
 /* ── PIN KİLİT EKRANI ── */
-#pinLockScreen { display:none; }
+#pinLockScreen { display:none; align-items:center; justify-content:center; }
 #pinLockScreen.open { display:flex; }
 .pin-dot {
   width:14px;height:14px;border-radius:50%;
@@ -606,7 +606,6 @@ tbody tr:active{background:var(--card2);}
 <div id="pinLockScreen" style="
   position:fixed;inset:0;z-index:5000;
   background:linear-gradient(145deg,#0d1f35,#0a1628);
-  display:flex;align-items:center;justify-content:center;
   flex-direction:column;padding:24px;
 ">
   <div style="font-size:3rem;margin-bottom:12px">🔒</div>
