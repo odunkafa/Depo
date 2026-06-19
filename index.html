@@ -481,6 +481,23 @@ tbody tr:active{background:var(--card2);}
 .notif-toggle input:checked + .notif-slider { background:var(--teal); }
 .notif-toggle input:checked + .notif-slider:before { transform:translateX(20px); }
 
+/* ── PIN KİLİT EKRANI ── */
+#pinLockScreen { display:none; }
+#pinLockScreen.open { display:flex; }
+.pin-dot {
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid var(--border);background:transparent;
+  transition:.15s;
+}
+.pin-dot.filled { background:var(--gold); border-color:var(--gold); }
+.pin-key {
+  width:64px;height:64px;border-radius:50%;
+  background:var(--card2);border:1px solid var(--border);
+  color:var(--text);font-size:1.3rem;font-weight:700;
+  cursor:pointer;transition:.12s;font-family:inherit;
+}
+.pin-key:active { background:var(--card); transform:scale(.92); }
+
 /* ── BTC CANLI GRAFİK ── */
 .period-btn {
   background:var(--card2); border:1px solid var(--border);
@@ -584,6 +601,44 @@ tbody tr:active{background:var(--card2);}
 </style>
 </head>
 <body>
+
+<!-- PIN KİLİT EKRANI -->
+<div id="pinLockScreen" style="
+  position:fixed;inset:0;z-index:5000;
+  background:linear-gradient(145deg,#0d1f35,#0a1628);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;padding:24px;
+">
+  <div style="font-size:3rem;margin-bottom:12px">🔒</div>
+  <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:6px">Drive İşlemleri Korumalı</div>
+  <div style="font-size:.8rem;color:var(--dim);margin-bottom:24px;text-align:center;max-width:280px">
+    Drive'a kaydet, yükle veya Apps Script URL'ini değiştirmek için PIN gir
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:20px" id="pinDotsRow">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <input type="tel" id="pinHiddenInput" maxlength="4" inputmode="numeric" autocomplete="off"
+    style="position:absolute;opacity:0;pointer-events:none">
+  <div id="pinKeypad" style="display:grid;grid-template-columns:repeat(3,64px);gap:12px;margin-bottom:16px">
+    <button class="pin-key" onclick="pinPress('1')">1</button>
+    <button class="pin-key" onclick="pinPress('2')">2</button>
+    <button class="pin-key" onclick="pinPress('3')">3</button>
+    <button class="pin-key" onclick="pinPress('4')">4</button>
+    <button class="pin-key" onclick="pinPress('5')">5</button>
+    <button class="pin-key" onclick="pinPress('6')">6</button>
+    <button class="pin-key" onclick="pinPress('7')">7</button>
+    <button class="pin-key" onclick="pinPress('8')">8</button>
+    <button class="pin-key" onclick="pinPress('9')">9</button>
+    <button class="pin-key" style="visibility:hidden">0</button>
+    <button class="pin-key" onclick="pinPress('0')">0</button>
+    <button class="pin-key" onclick="pinBackspace()">⌫</button>
+  </div>
+  <div id="pinError" style="color:var(--red);font-size:.8rem;font-weight:600;min-height:18px"></div>
+  <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="closePinLock()">✕ Vazgeç</button>
+</div>
 
 <!-- HEADER -->
 <header class="app-header">
@@ -1022,18 +1077,6 @@ tbody tr:active{background:var(--card2);}
 
         <div class="notif-row">
           <div class="notif-label">
-            <div class="notif-title">Bildirim Saati Aralığı</div>
-            <div class="notif-sub">Bu saatler dışında bildirim gönderme</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input class="notif-time" id="notifTimeStart" type="number" min="0" max="23" value="8" placeholder="08">
-            <span style="color:var(--muted);font-size:.8rem">—</span>
-            <input class="notif-time" id="notifTimeEnd" type="number" min="0" max="23" value="22" placeholder="22">
-          </div>
-        </div>
-
-        <div class="notif-row">
-          <div class="notif-label">
             <div class="notif-title">Tekrar Engeli</div>
             <div class="notif-sub">Aynı bildirim ne kadar süre tekrar gönderilmesin</div>
           </div>
@@ -1290,16 +1333,13 @@ tbody tr:active{background:var(--card2);}
         <!-- Apps Script URL -->
         <div style="margin-bottom:12px">
           <label class="input-label">⚙️ Apps Script URL</label>
-          <input class="input-field normal" id="notifScriptUrl" type="text" placeholder="https://script.google.com/macros/s/...">
-          <div style="font-size:.72rem;color:var(--muted);margin-top:5px">Bildirim gönderecek Apps Script adresi</div>
+          <input class="input-field normal" id="notifScriptUrl" type="text" placeholder="https://script.google.com/macros/s/..." readonly onclick="unlockScriptUrlField()" style="cursor:pointer">
+          <div style="font-size:.72rem;color:var(--muted);margin-top:5px">🔒 Değiştirmek için PIN gerekli — kutuya dokun</div>
         </div>
 
-        <!-- Kaydet & Test -->
+        <!-- Kaydet -->
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
           <button class="btn btn-teal btn-sm btn-full" onclick="saveNotifSettings()">💾 Ayarları Kaydet</button>
-          <button class="btn btn-ghost btn-sm btn-full" onclick="sendTestNotif()">🔔 Test Bildirimi Gönder</button>
-          <div style="font-size:.72rem;color:var(--muted);text-align:center;margin-top:4px">Apps Script'ten telefona test bildirimi gönderir</div>
-          <div style="font-size:.72rem;color:var(--muted);text-align:center" id="notifLastSent"></div>
         </div>
 
       </div>
@@ -1547,6 +1587,82 @@ tbody tr:active{background:var(--card2);}
 </div>
 
 <script>
+/* ═══════════════════════════════════════
+   PIN KORUMA SİSTEMİ
+═══════════════════════════════════════ */
+var APP_PIN = '2026'; // Sabit PIN — değiştirilemez
+var pinBuffer = '';
+var pinSuccessCallback = null;
+var pinUnlockedUntil = 0; // Oturum boyunca tekrar sormamak için zaman damgası
+
+function requirePin(callback) {
+  // Son 10 dakikada doğru PIN girildiyse tekrar sormaya gerek yok
+  if (Date.now() < pinUnlockedUntil) {
+    callback();
+    return;
+  }
+  pinSuccessCallback = callback;
+  pinBuffer = '';
+  updatePinDots();
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinLockScreen').classList.add('open');
+}
+
+function pinPress(digit) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit;
+  updatePinDots();
+  if (pinBuffer.length === 4) {
+    setTimeout(checkPin, 150);
+  }
+}
+
+function pinBackspace() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+  document.getElementById('pinError').textContent = '';
+}
+
+function updatePinDots() {
+  for (var i = 0; i < 4; i++) {
+    document.getElementById('pd'+i).classList.toggle('filled', i < pinBuffer.length);
+  }
+}
+
+function checkPin() {
+  if (pinBuffer === APP_PIN) {
+    pinUnlockedUntil = Date.now() + 10 * 60 * 1000; // 10 dakika
+    document.getElementById('pinLockScreen').classList.remove('open');
+    var cb = pinSuccessCallback;
+    pinSuccessCallback = null;
+    pinBuffer = '';
+    if (cb) cb();
+  } else {
+    document.getElementById('pinError').textContent = 'Yanlış PIN, tekrar dene';
+    pinBuffer = '';
+    updatePinDots();
+    var screen = document.getElementById('pinLockScreen');
+    screen.style.animation = 'none';
+    setTimeout(() => { screen.style.animation = ''; }, 10);
+  }
+}
+
+function closePinLock() {
+  document.getElementById('pinLockScreen').classList.remove('open');
+  pinSuccessCallback = null;
+  pinBuffer = '';
+}
+
+function unlockScriptUrlField() {
+  requirePin(function(){
+    var field = document.getElementById('notifScriptUrl');
+    field.removeAttribute('readonly');
+    field.style.cursor = 'text';
+    field.focus();
+    showToast('🔓 Apps Script URL düzenlenebilir.', 'success');
+  });
+}
+
 /* ═══════════════════════════════════════
    STATE
 ═══════════════════════════════════════ */
@@ -3068,13 +3184,17 @@ function openGmailExport(){
    DRIVE SYNC
 ═══════════════════════════════════════ */
 function confirmDriveSave(){
-  var txCount=getTxs().length;
-  var state=computeState(getTxs());
-  document.getElementById('driveSaveConfirmSub').textContent=txCount+' işlem • '+fmtCur(state.totalInvested)+' toplam yatırım';
-  showModal('driveSaveConfirmModal');
+  requirePin(function(){
+    var txCount=getTxs().length;
+    var state=computeState(getTxs());
+    document.getElementById('driveSaveConfirmSub').textContent=txCount+' işlem • '+fmtCur(state.totalInvested)+' toplam yatırım';
+    showModal('driveSaveConfirmModal');
+  });
 }
 function confirmDriveLoad(){
-  showModal('driveLoadConfirmModal');
+  requirePin(function(){
+    showModal('driveLoadConfirmModal');
+  });
 }
 async function driveSaveConfirmed(){
   var btn=document.getElementById('driveSaveBtn');
@@ -3406,7 +3526,7 @@ async function buildCycleAnalysis(currentPct, currentPrice, state) {
    BİLDİRİM AYARLARI
 ═══════════════════════════════════════ */
 var notifSettings = JSON.parse(localStorage.getItem('btc_notif') || 'null') || {
-  email:'', freq:30, timeStart:8, timeEnd:22, cooldown:12,
+  email:'', freq:30, cooldown:12,
   morning:true, morningHour:8,
   profit:true, profitPct:20, halfMode:true, noProfitDays:60,
   buy:true, buyPct:5, buyAmount:true, consecutive:true,
@@ -3423,8 +3543,7 @@ function loadNotifSettings() {
   var set = (id, val) => { var el=document.getElementById(id); if(el) el.value = val; };
   var setChk = (id, val) => { var el=document.getElementById(id); if(el) el.checked = val; };
   set('notifFreq', s.freq);
-  set('notifTimeStart', s.timeStart);
-  set('notifTimeEnd', s.timeEnd);
+  // (saat aralığı ayarı kaldırıldı)
   set('notifCooldown', s.cooldown);
   setChk('notifMorning', s.morning);
   set('notifMorningHour', s.morningHour);
@@ -3460,8 +3579,7 @@ function loadNotifSettings() {
   updateChips('notifInvestReminder', s.investReminder, [1,2,3]);
   if(s.silent) document.getElementById('silentDateRow').style.display = 'block';
   // Son gönderim zamanı
-  var last = localStorage.getItem('btc_notif_last');
-  if(last) document.getElementById('notifLastSent').textContent = '📡 Son kontrol: '+last;
+  // (test bildirimi kaldırıldı)
   // OneSignal durumunu kontrol et
   setTimeout(checkOneSignalStatus, 800);
 }
@@ -3494,8 +3612,7 @@ function saveNotifSettings() {
   notifSettings = {
     email: get('notifEmail'),
     freq: parseInt(get('notifFreq')),
-    timeStart: parseInt(get('notifTimeStart')),
-    timeEnd: parseInt(get('notifTimeEnd')),
+    // (saat aralığı ayarı kaldırıldı)
     cooldown: parseInt(get('notifCooldown')),
     morning: getChk('notifMorning'),
     morningHour: parseInt(get('notifMorningHour')),
@@ -3527,6 +3644,10 @@ function saveNotifSettings() {
   localStorage.setItem('btc_notif', JSON.stringify(notifSettings));
   // Drive'a da kaydet
   driveSaveNotif();
+  // Alanı yeniden kilitle
+  var field = document.getElementById('notifScriptUrl');
+  field.setAttribute('readonly', true);
+  field.style.cursor = 'pointer';
   showToast('🔔 Bildirim ayarları kaydedildi!', 'success');
 }
 
@@ -3597,30 +3718,6 @@ async function requestOneSignalPermission() {
       showToast('Bildirim izni alınamadı: ' + e.message, 'error');
     }
   });
-}
-
-async function sendTestNotif() {
-  var btn = event.target;
-  btn.textContent = '⏳ Gönderiliyor...'; btn.disabled = true;
-  var url = document.getElementById('notifScriptUrl')?.value || DRIVE_URL;
-  if (!url) {
-    showToast('Önce Apps Script URL gir!', 'error');
-    btn.textContent='🔔 Test Bildirimi Gönder'; btn.disabled=false; return;
-  }
-  try {
-    await fetch(url, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ type: 'TEST' }),
-      mode: 'no-cors'
-    });
-    showToast('🔔 Test bildirimi gönderildi! Birkaç saniye bekle.', 'success');
-    localStorage.setItem('btc_notif_last', new Date().toLocaleString('tr-TR'));
-    document.getElementById('notifLastSent').textContent = '📡 Son test: ' + new Date().toLocaleString('tr-TR');
-  } catch(e) {
-    showToast('Bağlantı hatası!', 'error');
-  }
-  btn.textContent='🔔 Test Bildirimi Gönder'; btn.disabled=false;
 }
 
 /* ═══════════════════════════════════════
