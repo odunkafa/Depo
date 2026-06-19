@@ -998,7 +998,8 @@ tbody tr:active{background:var(--card2);}
             <span id="oneSignalDot" style="width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0"></span>
             <span id="oneSignalText">Kontrol ediliyor...</span>
           </div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="checkOneSignalStatus()">🔄 Durumu Kontrol Et</button>
+          <button class="btn btn-gold btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="requestOneSignalPermission()">🔔 Bildirim İzni İste</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:6px;width:100%;justify-content:center" onclick="checkOneSignalStatus()">🔄 Durumu Kontrol Et</button>
         </div>
 
         <div class="divider"></div>
@@ -3563,26 +3564,39 @@ async function checkOneSignalStatus() {
   try {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
-      var permission = await OneSignal.getNotificationPermission();
-      var playerId = await OneSignal.getUserId();
-      if (permission === 'granted' && playerId) {
+      var permission = OneSignal.Notifications.permission; // true/false
+      var playerId = OneSignal.User.PushSubscription.id;
+      var optedIn = OneSignal.User.PushSubscription.optedIn;
+      if (permission && playerId && optedIn) {
         dot.style.background = 'var(--green)';
         dot.style.boxShadow = '0 0 6px var(--green)';
-        text.textContent = '✅ Bildirimler aktif! Player ID: ' + playerId.substring(0,8) + '...';
+        text.textContent = '✅ Bildirimler aktif! ID: ' + playerId.substring(0,8) + '...';
         localStorage.setItem('btc_onesignal_id', playerId);
-      } else if (permission === 'denied') {
+      } else if (permission === false) {
         dot.style.background = 'var(--red)';
-        text.textContent = '❌ Bildirim izni reddedildi. Tarayıcı ayarlarından izin ver.';
+        text.textContent = '❌ Bildirim izni verilmedi. Aşağıdaki butona bas.';
       } else {
         dot.style.background = 'var(--gold)';
-        text.textContent = '⚠️ Bildirim izni verilmedi. Siteyi ziyaret edince izin isteyecek.';
-        OneSignal.showSlidedownPrompt();
+        text.textContent = '⚠️ Henüz kayıtlı değilsin. Aşağıdaki butona bas.';
       }
     });
   } catch(e) {
     dot.style.background = 'var(--muted)';
     text.textContent = 'OneSignal yüklenemedi. Sayfayı yenile.';
   }
+}
+
+async function requestOneSignalPermission() {
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    try {
+      await OneSignal.Notifications.requestPermission();
+      setTimeout(checkOneSignalStatus, 1000);
+      showToast('🔔 Bildirim izni istendi!', 'success');
+    } catch(e) {
+      showToast('Bildirim izni alınamadı: ' + e.message, 'error');
+    }
+  });
 }
 
 async function sendTestNotif() {
@@ -3621,17 +3635,27 @@ startBtcAutoRefresh();
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 OneSignalDeferred.push(async function(OneSignal) {
   try {
-    var playerId = await OneSignal.getUserId();
+    var playerId = OneSignal.User.PushSubscription.id;
     if (playerId) {
       localStorage.setItem('btc_onesignal_id', playerId);
       console.log('OneSignal Player ID:', playerId);
     }
-    // Bildirim izni yoksa iste
-    var permission = await OneSignal.getNotificationPermission();
-    if (permission === 'default') {
-      setTimeout(() => OneSignal.showSlidedownPrompt(), 3000);
+    // Bildirim izni yoksa 3 saniye sonra otomatik iste
+    var permission = OneSignal.Notifications.permission;
+    if (!permission) {
+      setTimeout(async () => {
+        try { await OneSignal.Notifications.requestPermission(); }
+        catch(e) { console.log('Permission request failed:', e); }
+      }, 3000);
     }
-  } catch(e) { console.log('OneSignal:', e); }
+    // Abonelik değişimini dinle
+    OneSignal.User.PushSubscription.addEventListener('change', function(event) {
+      console.log('Subscription changed:', event);
+      if (event.current.id) {
+        localStorage.setItem('btc_onesignal_id', event.current.id);
+      }
+    });
+  } catch(e) { console.log('OneSignal init error:', e); }
 });
 
 // Dakikada bir canlı veri güncelle
