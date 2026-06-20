@@ -991,6 +991,8 @@ tbody tr:active{background:var(--card2);}
           <div style="font-size:.72rem;color:var(--muted);margin-top:6px;line-height:1.5">
             Bildirimler CallMeBot ile WhatsApp'a düşer. Numara/API key Apps Script içinde tanımlı.
           </div>
+          <button class="btn btn-gold btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="sendInstantReport()" id="instantReportBtn">📊 Anlık Rapor Gönder</button>
+          <div style="font-size:.7rem;color:var(--muted);margin-top:5px;text-align:center">Verilerine dokunmaz, sadece WhatsApp'a özet yollar</div>
         </div>
 
         <div class="divider"></div>
@@ -1565,7 +1567,6 @@ var investDays = JSON.parse(localStorage.getItem('btc_invest_days') || 'null') |
   var old = parseInt(localStorage.getItem('btc_invest_day') || '0');
   return old ? [old] : [];
 })();
-var journalEntries = JSON.parse(localStorage.getItem('btc_journal') || '[]');
 var earnedBadges = JSON.parse(localStorage.getItem('btc_badges') || '[]');
 var buySteps = JSON.parse(localStorage.getItem('btc_steps') || 'null') || {s1:20000,s2:30000,s3:40000,init:20000};
 
@@ -1620,10 +1621,8 @@ function confirmReset() { showModal('resetModal'); }
 function resetAll() {
   setTxs([]);
   earnedBadges = [];
-  journalEntries = [];
   cycleHistory = [];
   localStorage.removeItem('btc_badges');
-  localStorage.removeItem('btc_journal');
   localStorage.removeItem('btc_cycles');
   localStorage.removeItem('btc_extra_invested');
   saveLocal();
@@ -2837,43 +2836,6 @@ function switchPortfolio(id){
   renderAll();
   showToast('📁 Portföy: '+portfolios.find(p=>p.id===id)?.name,'success');
 }
-function addPortfolio(){
-  var name=document.getElementById('newPortfolioName').value.trim();
-  if(!name){showToast('Portföy adı gir!','error');return;}
-  var id='p_'+Date.now();
-  portfolios.push({id,name});
-  allTransactions[id]=[];
-  localStorage.setItem('btc_portfolios',JSON.stringify(portfolios));
-  saveLocal();
-  document.getElementById('newPortfolioName').value='';
-  switchPortfolio(id);
-  showToast('🏦 '+name+' portföyü oluşturuldu!','success');
-}
-
-/* ═══════════════════════════════════════
-   JOURNAL
-═══════════════════════════════════════ */
-function saveJournalEntry(){
-  var text=document.getElementById('journalInput').value.trim();
-  if(!text){showToast('Bir şeyler yaz!','error');return;}
-  journalEntries.unshift({date:new Date().toLocaleString('tr-TR'),text});
-  if(journalEntries.length>20) journalEntries=journalEntries.slice(0,20);
-  localStorage.setItem('btc_journal',JSON.stringify(journalEntries));
-  document.getElementById('journalInput').value='';
-  renderJournal();
-  showToast('📝 Günlük kaydedildi!','success');
-}
-function renderJournal(){
-  var el=document.getElementById('journalList');
-  if(!el) return;
-  if(!journalEntries.length){el.innerHTML='<div style="font-size:.78rem;color:var(--muted)">Henüz günlük girişi yok.</div>';return;}
-  el.innerHTML=journalEntries.slice(0,5).map(j=>`
-    <div class="journal-item">
-      <div class="journal-meta"><span class="journal-date">${j.date}</span></div>
-      <div class="journal-note">${j.text}</div>
-    </div>
-  `).join('');
-}
 
 /* ═══════════════════════════════════════
    FEAR & GREED
@@ -3616,6 +3578,67 @@ async function driveSaveNotif() {
       mode:'no-cors'
     });
   } catch {}
+}
+
+async function sendInstantReport() {
+  var btn = document.getElementById('instantReportBtn');
+  var url = document.getElementById('notifScriptUrl')?.value || notifSettings.scriptUrl || DRIVE_URL;
+  if (!url) { showToast('Apps Script URL bulunamadı!', 'error'); return; }
+
+  btn.textContent = '⏳ Gönderiliyor...'; btn.disabled = true;
+  try {
+    var txs = getTxs();
+    var state = computeState(txs);
+    var lastTx = txs.slice(-1)[0];
+    var currentPrice = lastTx ? lastTx.price : 0;
+    var pct = state.avgCost ? ((currentPrice - state.avgCost) / state.avgCost * 100) : 0;
+
+    // Yolculuk süresi
+    var durationStr = '';
+    if (txs.length) {
+      var firstDate = new Date(txs[0].id);
+      var diffDays = Math.floor((new Date() - firstDate) / (1000*60*60*24));
+      var y = Math.floor(diffDays/365), m = Math.floor((diffDays%365)/30), d = diffDays%30;
+      if (y>0) durationStr += y+' yıl ';
+      if (m>0) durationStr += m+' ay ';
+      durationStr += d+' gün';
+    }
+
+    // Rozet sayısı
+    var badgeCount = earnedBadges.length;
+
+    // Hedef durumu
+    var goalText = (userGoal && userGoal.btc) ?
+      (userGoal.name + ' — %' + ((state.totalBtc/userGoal.btc)*100).toFixed(1) + ' tamamlandı') : 'Belirlenmedi';
+
+    await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        type: 'REPORT',
+        report: {
+          totalInvested: state.totalInvested,
+          totalBtc: state.totalBtc,
+          avgCost: state.avgCost,
+          totalWithdrawn: state.totalWithdrawn,
+          currentPrice: currentPrice,
+          pct: pct,
+          txCount: txs.length,
+          buyCount: txs.filter(t=>t.type!=='SELL').length,
+          sellCount: txs.filter(t=>t.type==='SELL').length,
+          duration: durationStr,
+          badgeCount: badgeCount,
+          goalText: goalText,
+          cycleCount: cycleHistory.length,
+        }
+      }),
+      mode: 'no-cors'
+    });
+    showToast('📊 Anlık rapor WhatsApp\'a gönderildi!', 'success');
+  } catch(e) {
+    showToast('Rapor gönderilemedi: ' + e.message, 'error');
+  }
+  btn.textContent = '📊 Anlık Rapor Gönder'; btn.disabled = false;
 }
 
 /* ═══════════════════════════════════════
