@@ -3582,8 +3582,8 @@ async function driveSaveNotif() {
 
 async function sendInstantReport() {
   var btn = document.getElementById('instantReportBtn');
-  var url = document.getElementById('notifScriptUrl')?.value || notifSettings.scriptUrl || DRIVE_URL;
-  if (!url) { showToast('Apps Script URL bulunamadı!', 'error'); return; }
+  var url = DRIVE_URL; // Drive butonlarıyla aynı sabit URL kullan — garanti çalışır
+  if (notifSettings.scriptUrl && notifSettings.scriptUrl.trim()) url = notifSettings.scriptUrl.trim();
 
   btn.textContent = '⏳ Gönderiliyor...'; btn.disabled = true;
   try {
@@ -3604,14 +3604,11 @@ async function sendInstantReport() {
       durationStr += d+' gün';
     }
 
-    // Rozet sayısı
     var badgeCount = earnedBadges.length;
-
-    // Hedef durumu
     var goalText = (userGoal && userGoal.btc) ?
       (userGoal.name + ' — %' + ((state.totalBtc/userGoal.btc)*100).toFixed(1) + ' tamamlandı') : 'Belirlenmedi';
 
-    var res = await fetch(url, {
+    await fetch(url, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -3631,10 +3628,9 @@ async function sendInstantReport() {
           goalText: goalText,
           cycleCount: cycleHistory.length,
         }
-      })
+      }),
+      mode: 'no-cors'
     });
-    var resText = await res.text();
-    console.log('Apps Script yanıtı:', resText);
     showToast('📊 Anlık rapor WhatsApp\'a gönderildi!', 'success');
   } catch(e) {
     console.log('sendInstantReport hatası:', e);
