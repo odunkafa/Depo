@@ -3611,7 +3611,7 @@ async function sendInstantReport() {
     var goalText = (userGoal && userGoal.btc) ?
       (userGoal.name + ' — %' + ((state.totalBtc/userGoal.btc)*100).toFixed(1) + ' tamamlandı') : 'Belirlenmedi';
 
-    await fetch(url, {
+    var res = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -3631,12 +3631,14 @@ async function sendInstantReport() {
           goalText: goalText,
           cycleCount: cycleHistory.length,
         }
-      }),
-      mode: 'no-cors'
+      })
     });
+    var resText = await res.text();
+    console.log('Apps Script yanıtı:', resText);
     showToast('📊 Anlık rapor WhatsApp\'a gönderildi!', 'success');
   } catch(e) {
-    showToast('Rapor gönderilemedi: ' + e.message, 'error');
+    console.log('sendInstantReport hatası:', e);
+    showToast('Hata: ' + (e.message || e.toString() || 'Bilinmeyen hata'), 'error');
   }
   btn.textContent = '📊 Anlık Rapor Gönder'; btn.disabled = false;
 }
