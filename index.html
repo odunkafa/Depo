@@ -3600,7 +3600,7 @@ async function sendInstantReport(){
     }
     var goalText=(userGoal&&userGoal.btc)?(userGoal.name+' — %'+((state.totalBtc/userGoal.btc)*100).toFixed(1)+' tamamlandı'):'Belirlenmedi';
     var reportPayload={type:'REPORT',report:{totalInvested:state.totalInvested,totalBtc:state.totalBtc,avgCost:state.avgCost,totalWithdrawn:state.totalWithdrawn,currentPrice:currentPrice,pct:pct,txCount:txs.length,buyCount:txs.filter(t=>t.type!=='SELL').length,sellCount:txs.filter(t=>t.type==='SELL').length,duration:durationStr,badgeCount:earnedBadges.length,goalText:goalText,cycleCount:cycleHistory.length}};
-    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(reportPayload),mode:'no-cors'});
+    await fetch(DRIVE_URL,{method:'POST',body:JSON.stringify(reportPayload),mode:'no-cors'});
     showToast('📊 Anlık rapor gönderildi!','success');
     btn.textContent='✅';
     setTimeout(()=>{btn.textContent='📊 Anlık Rapor Gönder';btn.disabled=false;},2500);
