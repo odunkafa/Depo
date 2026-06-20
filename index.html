@@ -1018,6 +1018,12 @@ tbody tr:active{background:var(--card2);}
             <div class="notif-title">Tekrar Engeli</div>
             <div class="notif-sub">Aynı bildirim ne kadar süre tekrar gönderilmesin</div>
           </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifCooldownEnabled" checked onchange="toggleCooldownSelect(this)"><span class="notif-slider"></span></label>
+        </div>
+        <div class="notif-row" id="cooldownSelectRow">
+          <div class="notif-label">
+            <div class="notif-title">Süre</div>
+          </div>
           <select class="notif-select" id="notifCooldown">
             <option value="6">6 saat</option>
             <option value="12" selected>12 saat</option>
@@ -1193,6 +1199,13 @@ tbody tr:active{background:var(--card2);}
 
         <!-- Periyodik özetler -->
         <div class="section-title">📊 Periyodik Özetler</div>
+        <div class="notif-row">
+          <div class="notif-label">
+            <div class="notif-title">Günlük Özet</div>
+            <div class="notif-sub">Her gün portföy özeti</div>
+          </div>
+          <label class="notif-toggle"><input type="checkbox" id="notifDaily"><span class="notif-slider"></span></label>
+        </div>
         <div class="notif-row">
           <div class="notif-label">
             <div class="notif-title">Haftalık Özet</div>
@@ -1400,7 +1413,7 @@ tbody tr:active{background:var(--card2);}
     <button class="modal-close" onclick="closeModal('investDayModal')">✕</button>
     <div class="modal-icon">📅</div>
     <div class="modal-title">Yatırım Günü</div>
-    <div class="modal-sub">Her ay hangi gün yatırım yapıyorsun?</div>
+    <div class="modal-sub">Her ay hangi gün(ler) yatırım yapıyorsun? Birden fazla seçebilirsin.</div>
     <div class="modal-body">
       <!-- Mini takvim -->
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:10px">
@@ -1548,7 +1561,10 @@ var lastAnalysis = null;
 var deletePendingIndex = null;
 var priceChartInst = null, pieChartInst = null, barChartInst = null, monthlyChartInst = null;
 var userGoal  = JSON.parse(localStorage.getItem('btc_goal') || 'null');
-var investDay = parseInt(localStorage.getItem('btc_invest_day') || '0');
+var investDays = JSON.parse(localStorage.getItem('btc_invest_days') || 'null') || (function(){
+  var old = parseInt(localStorage.getItem('btc_invest_day') || '0');
+  return old ? [old] : [];
+})();
 var journalEntries = JSON.parse(localStorage.getItem('btc_journal') || '[]');
 var earnedBadges = JSON.parse(localStorage.getItem('btc_badges') || '[]');
 var buySteps = JSON.parse(localStorage.getItem('btc_steps') || 'null') || {s1:20000,s2:30000,s3:40000,init:20000};
@@ -2556,7 +2572,7 @@ function buildCalendar() {
   var html = '';
   // 1-31 günleri göster, ama 29-31 soluk
   for (var d = 1; d <= 31; d++) {
-    var isSelected = investDay === d;
+    var isSelected = investDays.includes(d);
     var isToday = today === d;
     var isRecommended = d <= 28;
     var dimStyle = d > 28 ? 'opacity:.45;' : '';
@@ -2564,41 +2580,60 @@ function buildCalendar() {
       style="${dimStyle}" onclick="selectCalDay(${d})">${d}</div>`;
   }
   grid.innerHTML = html;
-  if (investDay) {
-    document.getElementById('selectedDayLabel').textContent = 'Her ayın ' + investDay + '. günü';
-    document.getElementById('investDaySaveBtn').disabled = false;
+  updateSelectedDayLabel();
+}
+
+function updateSelectedDayLabel() {
+  var btn = document.getElementById('investDaySaveBtn');
+  var label = document.getElementById('selectedDayLabel');
+  if (investDays.length === 0) {
+    label.textContent = '—';
+    btn.disabled = true;
+  } else {
+    var sorted = [...investDays].sort((a,b)=>a-b);
+    label.textContent = 'Her ayın ' + sorted.join(', ') + '. günü';
+    btn.disabled = false;
   }
 }
 
 function selectCalDay(d) {
-  investDay = d;
-  // Seçili günü güncelle
+  var idx = investDays.indexOf(d);
+  if (idx === -1) {
+    investDays.push(d);
+  } else {
+    investDays.splice(idx, 1);
+  }
+  // Seçili günleri güncelle
   document.querySelectorAll('.cal-day').forEach((el, i) => {
-    el.classList.toggle('selected', i + 1 === d);
+    el.classList.toggle('selected', investDays.includes(i + 1));
   });
-  document.getElementById('selectedDayLabel').textContent = 'Her ayın ' + d + '. günü';
-  document.getElementById('investDaySaveBtn').disabled = false;
+  updateSelectedDayLabel();
 }
 
 function saveInvestDay(){
-  if(!investDay){ showToast('Bir gün seç!','error'); return; }
-  localStorage.setItem('btc_invest_day', investDay);
+  if(!investDays.length){ showToast('En az bir gün seç!','error'); return; }
+  localStorage.setItem('btc_invest_days', JSON.stringify(investDays));
   closeModal('investDayModal'); updateCountdown();
-  showToast('📅 Yatırım günü kaydedildi: Ayın '+investDay+'. günü','success');
+  var sorted = [...investDays].sort((a,b)=>a-b);
+  showToast('📅 Yatırım günleri kaydedildi: '+sorted.join(', '),'success');
 }
 function updateCountdown(){
   var box=document.getElementById('countdownBox');
-  if(!investDay){
+  if(!investDays.length){
     document.getElementById('countdownDays').textContent='📅';
     document.getElementById('countdownDate').textContent='Yatırım günü belirle →';
     return;
   }
   var now=new Date();
-  var target=new Date(now.getFullYear(),now.getMonth(),investDay);
-  if(target<=now) target=new Date(now.getFullYear(),now.getMonth()+1,investDay);
-  var diff=Math.ceil((target-now)/(1000*60*60*24));
-  document.getElementById('countdownDays').textContent=diff===0?'BUGÜN!':diff;
-  document.getElementById('countdownDate').textContent='Ayın '+investDay+'. günü — '+target.toLocaleDateString('tr-TR');
+  var bestTarget=null, bestDiff=Infinity, bestDay=null;
+  investDays.forEach(d=>{
+    var target=new Date(now.getFullYear(),now.getMonth(),d);
+    if(target<=now) target=new Date(now.getFullYear(),now.getMonth()+1,d);
+    var diff=Math.ceil((target-now)/(1000*60*60*24));
+    if(diff<bestDiff){ bestDiff=diff; bestTarget=target; bestDay=d; }
+  });
+  document.getElementById('countdownDays').textContent=bestDiff===0?'BUGÜN!':bestDiff;
+  document.getElementById('countdownDate').textContent='Ayın '+bestDay+'. günü — '+bestTarget.toLocaleDateString('tr-TR');
 }
 
 /* ═══════════════════════════════════════
@@ -3066,7 +3101,7 @@ async function autoSaveToDrive() {
     await fetch(DRIVE_URL, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({transactions:allTransactions, portfolios, goal:userGoal, investDay, steps:buySteps}),
+      body: JSON.stringify({transactions:allTransactions, portfolios, goal:userGoal, investDays, steps:buySteps}),
       mode: 'no-cors'
     });
     console.log('Otomatik Drive senkronizasyonu tamam.');
@@ -3087,7 +3122,7 @@ async function autoSyncFromDrive() {
       allTransactions = data.transactions;
       if (data.portfolios) portfolios = data.portfolios;
       if (data.goal) { userGoal = data.goal; localStorage.setItem('btc_goal', JSON.stringify(userGoal)); }
-      if (data.investDay) { investDay = data.investDay; localStorage.setItem('btc_invest_day', investDay); }
+      if (data.investDays) { investDays = data.investDays; localStorage.setItem('btc_invest_days', JSON.stringify(investDays)); }
       if (data.steps) { buySteps = data.steps; localStorage.setItem('btc_steps', JSON.stringify(buySteps)); }
       saveLocal();
       renderAll();
@@ -3102,7 +3137,7 @@ async function driveSaveConfirmed(){
   var btn=document.getElementById('driveSaveBtn');
   btn.textContent='⏳'; btn.disabled=true;
   try {
-    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactions:allTransactions,portfolios,goal:userGoal,investDay,steps:buySteps}),mode:'no-cors'});
+    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactions:allTransactions,portfolios,goal:userGoal,investDays,steps:buySteps}),mode:'no-cors'});
     showToast('☁️ Drive\'a kaydedildi!','success');
     btn.textContent='✅'; btn.classList.add('saving');
     setTimeout(()=>{btn.textContent='☁️ Kaydet';btn.disabled=false;btn.classList.remove('saving');},2500);
@@ -3122,7 +3157,7 @@ async function driveLoadConfirmed(){
     else if(Array.isArray(data)){ allTransactions={default:data}; }
     if(data.portfolios) portfolios=data.portfolios;
     if(data.goal) { userGoal=data.goal; localStorage.setItem('btc_goal',JSON.stringify(userGoal)); }
-    if(data.investDay) { investDay=data.investDay; localStorage.setItem('btc_invest_day',investDay); }
+    if(data.investDays) { investDays=data.investDays; localStorage.setItem('btc_invest_days',JSON.stringify(investDays)); }
     if(data.steps) { buySteps=data.steps; localStorage.setItem('btc_steps',JSON.stringify(buySteps)); }
     saveLocal(); renderAll();
     showToast('✅ Drive\'dan yüklendi!','success');
@@ -3428,13 +3463,13 @@ async function buildCycleAnalysis(currentPct, currentPrice, state) {
    BİLDİRİM AYARLARI
 ═══════════════════════════════════════ */
 var notifSettings = JSON.parse(localStorage.getItem('btc_notif') || 'null') || {
-  email:'', freq:30, cooldown:12,
+  email:'', freq:30, cooldownEnabled:true, cooldown:12,
   morning:true, morningHour:8,
   profit:true, profitPct:20, halfMode:true, noProfitDays:60,
   buy:true, buyPct:5, buyAmount:true, consecutive:true,
   crash:true, crashPct:15, fomo:true, fomoPct:20,
   investDay:true, investReminder:1,
-  weekly:true, monthly:true, cycle:true, detail:'detail',
+  daily:false, weekly:true, monthly:true, cycle:true, detail:'detail',
   goal:true, anniv:true, missed:true,
   silent:false, silentUntil:'',
   scriptUrl:'',
@@ -3446,7 +3481,10 @@ function loadNotifSettings() {
   var setChk = (id, val) => { var el=document.getElementById(id); if(el) el.checked = val; };
   set('notifFreq', s.freq);
   // (saat aralığı ayarı kaldırıldı)
+  setChk('notifCooldownEnabled', s.cooldownEnabled !== false);
+  document.getElementById('cooldownSelectRow').style.display = (s.cooldownEnabled !== false) ? 'flex' : 'none';
   set('notifCooldown', s.cooldown);
+  setChk('notifDaily', s.daily);
   setChk('notifMorning', s.morning);
   set('notifMorningHour', s.morningHour);
   setChk('notifProfit', s.profit);
@@ -3505,6 +3543,10 @@ function toggleSilentMode(checkbox) {
   document.getElementById('silentDateRow').style.display = checkbox.checked ? 'block' : 'none';
 }
 
+function toggleCooldownSelect(checkbox) {
+  document.getElementById('cooldownSelectRow').style.display = checkbox.checked ? 'flex' : 'none';
+}
+
 function saveNotifSettings() {
   var get = (id) => { var el=document.getElementById(id); return el ? el.value : ''; };
   var getChk = (id) => { var el=document.getElementById(id); return el ? el.checked : false; };
@@ -3512,7 +3554,9 @@ function saveNotifSettings() {
     email: get('notifEmail'),
     freq: parseInt(get('notifFreq')),
     // (saat aralığı ayarı kaldırıldı)
+    cooldownEnabled: getChk('notifCooldownEnabled'),
     cooldown: parseInt(get('notifCooldown')),
+    daily: getChk('notifDaily'),
     morning: getChk('notifMorning'),
     morningHour: parseInt(get('notifMorningHour')),
     profit: getChk('notifProfit'),
@@ -3557,7 +3601,7 @@ async function driveSaveNotif() {
       body: JSON.stringify({
         transactions: allTransactions,
         portfolios, goal: userGoal,
-        investDay, steps: buySteps,
+        investDays, steps: buySteps,
         notifSettings,
         // Anlık durumu da gönder (Apps Script hesaplayabilsin)
         currentState: {
