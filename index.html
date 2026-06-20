@@ -11,16 +11,6 @@
 <!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
 
-<!-- OneSignal Push Bildirimi -->
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "2c1770c1-1f4f-4555-8246-16461d2dfa16",
-    });
-  });
-</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -991,18 +981,21 @@ tbody tr:active{background:var(--card2);}
       </div>
       <div class="card-body">
 
-        <!-- OneSignal Durum -->
+        <!-- WhatsApp Bildirim Durumu -->
         <div style="margin-bottom:16px">
-          <div class="input-label">🔔 OneSignal Bildirim Durumu</div>
-          <div id="oneSignalStatus" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:.82rem;display:flex;align-items:center;gap:8px">
-            <span id="oneSignalDot" style="width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0"></span>
-            <span id="oneSignalText">Kontrol ediliyor...</span>
+          <div class="input-label">💬 WhatsApp Bildirimleri</div>
+          <div style="background:rgba(0,212,188,.08);border:1px solid rgba(0,212,188,.25);border-radius:10px;padding:12px;font-size:.82rem;display:flex;align-items:center;gap:8px">
+            <span style="width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0"></span>
+            <span style="color:var(--text)">✅ Aktif — Apps Script üzerinden WhatsApp'a gönderiliyor</span>
           </div>
-          <button class="btn btn-gold btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="requestOneSignalPermission()">🔔 Bildirim İzni İste</button>
-          <button class="btn btn-ghost btn-sm" style="margin-top:6px;width:100%;justify-content:center" onclick="checkOneSignalStatus()">🔄 Durumu Kontrol Et</button>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:6px;line-height:1.5">
+            Bildirimler CallMeBot ile WhatsApp'a düşer. Numara/API key Apps Script içinde tanımlı.
+          </div>
         </div>
 
         <div class="divider"></div>
+
+        <!-- Apps Script URL bölümü altta -->
 
         <!-- Genel ayarlar -->
         <div class="section-title">⚙️ Genel</div>
@@ -3487,10 +3480,7 @@ function loadNotifSettings() {
   updateChips('notifFomoPct', s.fomoPct, [15,20,30]);
   updateChips('notifInvestReminder', s.investReminder, [1,2,3]);
   if(s.silent) document.getElementById('silentDateRow').style.display = 'block';
-  // Son gönderim zamanı
   // (test bildirimi kaldırıldı)
-  // OneSignal durumunu kontrol et
-  setTimeout(checkOneSignalStatus, 800);
 }
 
 function updateChips(hiddenId, val, vals) {
@@ -3584,47 +3574,6 @@ async function driveSaveNotif() {
   } catch {}
 }
 
-async function checkOneSignalStatus() {
-  var dot = document.getElementById('oneSignalDot');
-  var text = document.getElementById('oneSignalText');
-  try {
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-      var permission = OneSignal.Notifications.permission; // true/false
-      var playerId = OneSignal.User.PushSubscription.id;
-      var optedIn = OneSignal.User.PushSubscription.optedIn;
-      if (permission && playerId && optedIn) {
-        dot.style.background = 'var(--green)';
-        dot.style.boxShadow = '0 0 6px var(--green)';
-        text.textContent = '✅ Bildirimler aktif! ID: ' + playerId.substring(0,8) + '...';
-        localStorage.setItem('btc_onesignal_id', playerId);
-      } else if (permission === false) {
-        dot.style.background = 'var(--red)';
-        text.textContent = '❌ Bildirim izni verilmedi. Aşağıdaki butona bas.';
-      } else {
-        dot.style.background = 'var(--gold)';
-        text.textContent = '⚠️ Henüz kayıtlı değilsin. Aşağıdaki butona bas.';
-      }
-    });
-  } catch(e) {
-    dot.style.background = 'var(--muted)';
-    text.textContent = 'OneSignal yüklenemedi. Sayfayı yenile.';
-  }
-}
-
-async function requestOneSignalPermission() {
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    try {
-      await OneSignal.Notifications.requestPermission();
-      setTimeout(checkOneSignalStatus, 1000);
-      showToast('🔔 Bildirim izni istendi!', 'success');
-    } catch(e) {
-      showToast('Bildirim izni alınamadı: ' + e.message, 'error');
-    }
-  });
-}
-
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
@@ -3633,33 +3582,6 @@ renderAll();
 fetchFearGreed();
 startBtcAutoRefresh();
 autoSyncFromDrive(); // Açılışta sessizce Drive'dan kontrol et
-
-// OneSignal — bildirim izni iste ve Player ID kaydet
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OneSignal) {
-  try {
-    var playerId = OneSignal.User.PushSubscription.id;
-    if (playerId) {
-      localStorage.setItem('btc_onesignal_id', playerId);
-      console.log('OneSignal Player ID:', playerId);
-    }
-    // Bildirim izni yoksa 3 saniye sonra otomatik iste
-    var permission = OneSignal.Notifications.permission;
-    if (!permission) {
-      setTimeout(async () => {
-        try { await OneSignal.Notifications.requestPermission(); }
-        catch(e) { console.log('Permission request failed:', e); }
-      }, 3000);
-    }
-    // Abonelik değişimini dinle
-    OneSignal.User.PushSubscription.addEventListener('change', function(event) {
-      console.log('Subscription changed:', event);
-      if (event.current.id) {
-        localStorage.setItem('btc_onesignal_id', event.current.id);
-      }
-    });
-  } catch(e) { console.log('OneSignal init error:', e); }
-});
 
 // Dakikada bir canlı veri güncelle
 setInterval(async () => {
