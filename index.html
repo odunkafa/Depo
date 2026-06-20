@@ -3580,63 +3580,34 @@ async function driveSaveNotif() {
   } catch {}
 }
 
-async function sendInstantReport() {
-  var btn = document.getElementById('instantReportBtn');
-  var url = DRIVE_URL; // Drive butonlarıyla aynı sabit URL kullan — garanti çalışır
-  if (notifSettings.scriptUrl && notifSettings.scriptUrl.trim()) url = notifSettings.scriptUrl.trim();
-
-  btn.textContent = '⏳ Gönderiliyor...'; btn.disabled = true;
+async function sendInstantReport(){
+  var btn=document.getElementById('instantReportBtn');
+  btn.textContent='⏳'; btn.disabled=true;
   try {
-    var txs = getTxs();
-    var state = computeState(txs);
-    var lastTx = txs.slice(-1)[0];
-    var currentPrice = lastTx ? lastTx.price : 0;
-    var pct = state.avgCost ? ((currentPrice - state.avgCost) / state.avgCost * 100) : 0;
-
-    // Yolculuk süresi
-    var durationStr = '';
-    if (txs.length) {
-      var firstDate = new Date(txs[0].id);
-      var diffDays = Math.floor((new Date() - firstDate) / (1000*60*60*24));
-      var y = Math.floor(diffDays/365), m = Math.floor((diffDays%365)/30), d = diffDays%30;
-      if (y>0) durationStr += y+' yıl ';
-      if (m>0) durationStr += m+' ay ';
-      durationStr += d+' gün';
+    var txs=getTxs();
+    var state=computeState(txs);
+    var lastTx=txs.slice(-1)[0];
+    var currentPrice=lastTx?lastTx.price:0;
+    var pct=state.avgCost?((currentPrice-state.avgCost)/state.avgCost*100):0;
+    var durationStr='';
+    if(txs.length){
+      var firstDate=new Date(txs[0].id);
+      var diffDays=Math.floor((new Date()-firstDate)/(1000*60*60*24));
+      var y=Math.floor(diffDays/365),m=Math.floor((diffDays%365)/30),d=diffDays%30;
+      if(y>0)durationStr+=y+' yıl ';
+      if(m>0)durationStr+=m+' ay ';
+      durationStr+=d+' gün';
     }
-
-    var badgeCount = earnedBadges.length;
-    var goalText = (userGoal && userGoal.btc) ?
-      (userGoal.name + ' — %' + ((state.totalBtc/userGoal.btc)*100).toFixed(1) + ' tamamlandı') : 'Belirlenmedi';
-
-    await fetch(url, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        type: 'REPORT',
-        report: {
-          totalInvested: state.totalInvested,
-          totalBtc: state.totalBtc,
-          avgCost: state.avgCost,
-          totalWithdrawn: state.totalWithdrawn,
-          currentPrice: currentPrice,
-          pct: pct,
-          txCount: txs.length,
-          buyCount: txs.filter(t=>t.type!=='SELL').length,
-          sellCount: txs.filter(t=>t.type==='SELL').length,
-          duration: durationStr,
-          badgeCount: badgeCount,
-          goalText: goalText,
-          cycleCount: cycleHistory.length,
-        }
-      }),
-      mode: 'no-cors'
-    });
-    showToast('📊 Anlık rapor WhatsApp\'a gönderildi!', 'success');
-  } catch(e) {
-    console.log('sendInstantReport hatası:', e);
-    showToast('Hata: ' + (e.message || e.toString() || 'Bilinmeyen hata'), 'error');
+    var goalText=(userGoal&&userGoal.btc)?(userGoal.name+' — %'+((state.totalBtc/userGoal.btc)*100).toFixed(1)+' tamamlandı'):'Belirlenmedi';
+    var reportPayload={type:'REPORT',report:{totalInvested:state.totalInvested,totalBtc:state.totalBtc,avgCost:state.avgCost,totalWithdrawn:state.totalWithdrawn,currentPrice:currentPrice,pct:pct,txCount:txs.length,buyCount:txs.filter(t=>t.type!=='SELL').length,sellCount:txs.filter(t=>t.type==='SELL').length,duration:durationStr,badgeCount:earnedBadges.length,goalText:goalText,cycleCount:cycleHistory.length}};
+    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(reportPayload),mode:'no-cors'});
+    showToast('📊 Anlık rapor gönderildi!','success');
+    btn.textContent='✅';
+    setTimeout(()=>{btn.textContent='📊 Anlık Rapor Gönder';btn.disabled=false;},2500);
+  } catch(err){
+    showToast('Rapor hatası: '+err.message,'error');
+    btn.textContent='📊 Anlık Rapor Gönder'; btn.disabled=false;
   }
-  btn.textContent = '📊 Anlık Rapor Gönder'; btn.disabled = false;
 }
 
 /* ═══════════════════════════════════════
