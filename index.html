@@ -140,33 +140,15 @@ body::before{
 .nav-icon{font-size:1.5rem;line-height:1;}
 .nav-label{font-size:.72rem;font-weight:700;letter-spacing:.3px;}
 
-/* ── AI CHAT ── */
-.ai-chat-container{display:flex;flex-direction:column;height:100%;padding-bottom:0!important;}
-.ai-messages{flex:1;overflow-y:auto;padding:10px 0;display:flex;flex-direction:column;gap:10px;}
-.ai-msg{max-width:85%;padding:11px 14px;border-radius:14px;font-size:.88rem;line-height:1.55;word-wrap:break-word;white-space:pre-wrap;}
-.ai-msg.user{align-self:flex-end;background:linear-gradient(135deg,#f7931a,#d97000);color:#fff;border-bottom-right-radius:4px;}
-.ai-msg.bot{align-self:flex-start;background:var(--card2);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px;}
-.ai-msg.bot .ai-label{font-size:.68rem;font-weight:700;color:var(--teal);margin-bottom:4px;display:block;}
-.ai-msg.user .ai-label{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:4px;display:block;}
-.ai-input-area{display:flex;gap:8px;padding:12px 0;border-top:1px solid var(--border);flex-shrink:0;}
-.ai-input{flex:1;background:var(--card2);border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:.9rem;outline:none;resize:none;min-height:44px;max-height:100px;}
-.ai-input:focus{border-color:var(--gold);}
-.ai-input::placeholder{color:var(--muted);}
-.ai-send-btn{background:linear-gradient(135deg,#f7931a,#d97000);border:none;border-radius:12px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;flex-shrink:0;transition:.15s;}
-.ai-send-btn:active{transform:scale(.92);}
-.ai-send-btn:disabled{opacity:.4;cursor:not-allowed;}
-.ai-typing{align-self:flex-start;padding:10px 16px;background:var(--card2);border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:4px;display:flex;gap:4px;align-items:center;}
-.ai-typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:aiDot 1.2s infinite;}
-.ai-typing span:nth-child(2){animation-delay:.2s;}
-.ai-typing span:nth-child(3){animation-delay:.4s;}
-@keyframes aiDot{0%,80%,100%{opacity:.3;transform:scale(.8);}40%{opacity:1;transform:scale(1.1);}}
-.ai-quick-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
-.ai-quick{background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:6px 12px;font-size:.78rem;font-weight:600;color:var(--dim);cursor:pointer;font-family:inherit;transition:.15s;}
-.ai-quick:hover{border-color:var(--gold);color:var(--gold);}
-.ai-key-row{display:flex;gap:8px;margin-bottom:12px;}
-.ai-key-input{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.78rem;outline:none;}
-.ai-key-input:focus{border-color:var(--teal);}
-.ai-key-save{background:var(--teal);border:none;border-radius:10px;padding:9px 14px;color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit;}
+/* ── CANLI BTC FİYATI (Tek Kaynak) ── */
+.live-price-box{background:linear-gradient(135deg,rgba(247,147,26,.16),rgba(0,212,188,.10));border:1.5px solid rgba(247,147,26,.35);border-radius:16px;padding:14px 16px;margin-bottom:12px;cursor:pointer;transition:.15s;user-select:none;}
+.live-price-box:active{transform:scale(.98);}
+.live-price-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.live-price-label{font-size:.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;}
+.live-price-updated{font-size:.66rem;color:var(--muted);}
+.live-price-val{font-size:1.7rem;font-weight:800;color:var(--text);font-family:'JetBrains Mono',monospace;line-height:1.2;}
+.live-price-val.stale{color:var(--muted);}
+.live-price-hint{font-size:.65rem;color:var(--muted);margin-top:3px;}
 
 /* ── CARDS ── */
 .card{
@@ -625,6 +607,16 @@ tbody tr:active{background:var(--card2);}
   <!-- ══ PAGE: ANA ══ -->
   <div class="page active" id="page-home">
 
+    <!-- Canlı BTC Fiyatı (Tek Kaynak) -->
+    <div class="live-price-box" id="livePriceBox" onclick="refreshLivePrice(true)">
+      <div class="live-price-top">
+        <span class="live-price-label">📡 Canlı BTC Fiyatı</span>
+        <span class="live-price-updated" id="livePriceUpdated">—</span>
+      </div>
+      <div class="live-price-val" id="livePriceVal">Yükleniyor...</div>
+      <div class="live-price-hint">Dokun: manuel yenile · Otomatik: 5dk</div>
+    </div>
+
     <!-- Level -->
     <div class="level-bar">
       <div class="level-emoji" id="levelEmoji">🌱</div>
@@ -696,7 +688,7 @@ tbody tr:active{background:var(--card2);}
         <div class="tile-sub">Elindeki BTC</div>
       </div>
       <div class="stat-tile teal" onclick="showInfoModal('portfoyDeger')">
-        <div class="tile-label">📊 Gerç. K/Z <button id="portRefreshBtn" onclick="event.stopPropagation();refreshPortfoyDeger()" style="background:rgba(0,212,188,.15);border:1px solid rgba(0,212,188,.3);border-radius:5px;color:var(--teal);font-size:.65rem;padding:1px 5px;cursor:pointer;margin-left:3px;font-weight:700">↻</button></div>
+        <div class="tile-label">📊 Gerç. K/Z <button id="portRefreshBtn" onclick="event.stopPropagation();refreshLivePrice(true)" style="background:rgba(0,212,188,.15);border:1px solid rgba(0,212,188,.3);border-radius:5px;color:var(--teal);font-size:.65rem;padding:1px 5px;cursor:pointer;margin-left:3px;font-weight:700">↻</button></div>
         <div class="tile-val teal" id="cardPortfoyDeger">₺0</div>
         <div class="tile-sub" id="cardPortfoyDegerSub">Son işlem fiyatına göre</div>
       </div>
@@ -716,7 +708,7 @@ tbody tr:active{background:var(--card2);}
           </div>
         </div>
         <div class="row">
-          <button class="btn btn-ghost btn-sm" id="liveBtn" onclick="fetchLivePrice()">
+          <button class="btn btn-ghost btn-sm" id="liveBtn" onclick="fillPriceInputFromLive()">
             <span id="liveBtnIcon">📡</span> Canlı
           </button>
           <button class="btn btn-gold" onclick="analyzePrice()" style="flex:1;justify-content:center">
@@ -864,6 +856,17 @@ tbody tr:active{background:var(--card2);}
         <div id="kovaContainer"></div>
       </div>
     </div>
+
+    <!-- Anlık Rapor -->
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">📊 Anlık Rapor</div>
+      </div>
+      <div class="card-body">
+        <button class="btn btn-gold btn-sm" style="width:100%;justify-content:center" onclick="sendInstantReport()" id="instantReportBtn">📊 Anlık Rapor Gönder</button>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:6px;text-align:center">Verilerine dokunmaz, sadece WhatsApp'a günlük özet yollar</div>
+      </div>
+    </div>
     <div class="card" id="fgCard">
       <div class="card-header" onclick="toggleCard('fgCard')">
         <div class="card-title">🌡️ Piyasa Ruh Hali</div>
@@ -878,91 +881,6 @@ tbody tr:active{background:var(--card2);}
         </div>
         <div style="margin-top:10px;font-size:.78rem;color:var(--dim);line-height:1.5" id="fgAdvice"></div>
         <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="fetchFearGreed()">🔄 Güncelle</button>
-      </div>
-    </div>
-
-    <!-- Senaryo -->
-    <div class="card" id="scenarioCard">
-      <div class="card-header" onclick="toggleCard('scenarioCard')">
-        <div class="card-title">🔮 Senaryo Simülatörü</div>
-        <span class="card-arrow">▼</span>
-      </div>
-      <div class="card-body">
-        <label class="input-label">BTC Hedef Fiyatı (₺)</label>
-        <input class="input-field" id="scenarioPrice" type="text" placeholder="örn: 5.000.000" oninput="formatPrice(this)" style="margin-bottom:10px">
-        <button class="btn btn-ghost btn-sm btn-full" onclick="runScenario()">Hesapla</button>
-        <div id="scenarioResult"></div>
-      </div>
-    </div>
-
-    <!-- Kriz -->
-    <div class="card" id="crisisCard">
-      <div class="card-header" onclick="toggleCard('crisisCard')">
-        <div class="card-title">📉 Kriz Simülatörü</div>
-        <span class="card-arrow">▼</span>
-      </div>
-      <div class="card-body">
-        <label class="input-label">Düşüş Yüzdesi (%)</label>
-        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="runCrisis(20)">-%20</button>
-          <button class="btn btn-ghost btn-sm" onclick="runCrisis(40)">-%40</button>
-          <button class="btn btn-ghost btn-sm" onclick="runCrisis(50)">-%50</button>
-          <button class="btn btn-ghost btn-sm" onclick="runCrisis(70)">-%70</button>
-          <button class="btn btn-ghost btn-sm" onclick="runCrisis(80)">-%80</button>
-        </div>
-        <div id="crisisResult"></div>
-      </div>
-    </div>
-
-    <!-- Emeklilik -->
-    <div class="card" id="retirementCard">
-      <div class="card-header" onclick="toggleCard('retirementCard')">
-        <div class="card-title">🏖️ Emeklilik Hesaplayıcı</div>
-        <span class="card-arrow">▼</span>
-      </div>
-      <div class="card-body">
-        <div class="row" style="margin-bottom:8px">
-          <div class="col">
-            <label class="input-label">Aylık Yatırım (₺)</label>
-            <input class="input-field normal" id="retMonthly" type="number" placeholder="20000">
-          </div>
-          <div class="col">
-            <label class="input-label">Süre (Yıl)</label>
-            <input class="input-field normal" id="retYears" type="number" placeholder="10">
-          </div>
-        </div>
-        <div class="row" style="margin-bottom:10px">
-          <div class="col">
-            <label class="input-label">Yıllık Büyüme (%)</label>
-            <input class="input-field normal" id="retGrowth" type="number" placeholder="30">
-          </div>
-          <div class="col">
-            <label class="input-label">Anlık BTC Fiyatı (₺)</label>
-            <input class="input-field normal" id="retBtcPrice" type="text" placeholder="3.500.000" oninput="formatPrice(this)">
-          </div>
-        </div>
-        <button class="btn btn-gold btn-full btn-sm" onclick="runRetirement()">🚀 Hesapla</button>
-        <div id="retirementResult"></div>
-      </div>
-    </div>
-
-    <!-- Ya olsaydı -->
-    <div class="card" id="whatifCard">
-      <div class="card-header" onclick="toggleCard('whatifCard')">
-        <div class="card-title">⏰ "Ya Olsaydı" Makinesi</div>
-        <span class="card-arrow">▼</span>
-      </div>
-      <div class="card-body">
-        <label class="input-label">Başlangıç Yılı</label>
-        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="runWhatIf(2020,10000)">2020</button>
-          <button class="btn btn-ghost btn-sm" onclick="runWhatIf(2021,10000)">2021</button>
-          <button class="btn btn-ghost btn-sm" onclick="runWhatIf(2022,10000)">2022</button>
-          <button class="btn btn-ghost btn-sm" onclick="runWhatIf(2023,10000)">2023</button>
-        </div>
-        <label class="input-label">Aylık Yatırım (₺)</label>
-        <input class="input-field normal" id="whatifAmount" type="number" placeholder="10000" style="margin-bottom:10px">
-        <div id="whatifResult"></div>
       </div>
     </div>
 
@@ -1019,9 +937,6 @@ tbody tr:active{background:var(--card2);}
           <div style="font-size:.72rem;color:var(--muted);margin-top:6px;line-height:1.5">
             Bildirimler CallMeBot ile WhatsApp'a düşer. Numara/API key Apps Script içinde tanımlı.
           </div>
-          <button class="btn btn-gold btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="sendInstantReport()" id="instantReportBtn">📊 Anlık Rapor Gönder</button>
-          <div style="font-size:.7rem;color:var(--muted);margin-top:5px;text-align:center">Verilerine dokunmaz, sadece WhatsApp'a özet yollar</div>
-          <button class="btn btn-teal btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="sendTestNotification()" id="testBtn">🧪 Test Bildirimi Gönder</button>
         </div>
 
         <div class="divider"></div>
@@ -1350,47 +1265,6 @@ tbody tr:active{background:var(--card2);}
 
   </div><!-- /page-settings -->
 
-  <!-- ═══ AI DANIŞMAN ═══ -->
-  <div class="page" id="page-ai">
-    <div class="ai-chat-container">
-
-      <!-- API Key ayarı -->
-      <div id="aiKeySetup" style="margin-bottom:10px">
-        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">🔑 Gemini API Key</div>
-        <div class="ai-key-row">
-          <input type="password" class="ai-key-input" id="aiKeyInput" placeholder="AIza...">
-          <button class="ai-key-save" onclick="saveAiKey()">Kaydet</button>
-        </div>
-      </div>
-
-      <!-- Hızlı sorular -->
-      <div class="ai-quick-btns" id="aiQuickBtns">
-        <button class="ai-quick" onclick="askAi('Portföyümü analiz et')">📊 Portföy Analizi</button>
-        <button class="ai-quick" onclick="askAi('Şu an almalı mıyım?')">🛒 Almalı mıyım?</button>
-        <button class="ai-quick" onclick="askAi('Stratejimi değerlendir')">🎯 Strateji</button>
-        <button class="ai-quick" onclick="askAi('Piyasa ne durumda?')">🌡️ Piyasa</button>
-        <button class="ai-quick" onclick="askAi('Risk analizimi yap')">⚠️ Risk</button>
-        <button class="ai-quick" onclick="askAi('Bir sonraki adımım ne olmalı?')">🚀 Sonraki Adım</button>
-      </div>
-
-      <!-- Mesaj alanı -->
-      <div class="ai-messages" id="aiMessages">
-        <div class="ai-msg bot">
-          <span class="ai-label">🤖 BTC Danışman</span>
-          Merhaba! Ben senin BTC yatırım danışmanınım. Portföy verilerini, stratejini ve piyasa durumunu analiz edebilirim.
-
-Yukarıdaki hızlı butonları kullanabilir ya da istediğin soruyu yazabilirsin!</div>
-      </div>
-
-      <!-- Input -->
-      <div class="ai-input-area">
-        <textarea class="ai-input" id="aiInput" placeholder="Sorunuzu yazın..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg();}"></textarea>
-        <button class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</button>
-      </div>
-
-    </div>
-  </div><!-- /page-ai -->
-
 </div><!-- /pages -->
 
 <!-- BOTTOM NAV -->
@@ -1410,10 +1284,6 @@ Yukarıdaki hızlı butonları kullanabilir ya da istediğin soruyu yazabilirsin
   <button class="nav-item" onclick="switchPage('settings',this)">
     <span class="nav-icon">⚙️</span>
     <span class="nav-label">Ayarlar</span>
-  </button>
-  <button class="nav-item" onclick="switchPage('ai',this)">
-    <span class="nav-icon">🤖</span>
-    <span class="nav-label">AI</span>
   </button>
 </nav>
 
@@ -1671,7 +1541,6 @@ function switchPage(name, btn) {
   if (name==='charts') { renderCharts(computeState(getTxs())); renderAdvStats(); loadBtcLiveChart(btcCurrentPeriod); }
   if (name==='tools') { fetchFearGreed(); renderKova(); }
   if (name==='settings') { loadNotifSettings(); }
-  if (name==='ai') { initAiPage(); scrollAiBottom(); }
 }
 
 function toggleCard(id) {
@@ -1702,100 +1571,120 @@ function resetAll() {
 }
 
 /* ═══════════════════════════════════════
-   LIVE PRICE
+   CANLI FİYAT — TEK KAYNAK SİSTEMİ
+   Tüm uygulama bu tek değişkeni kullanır.
+   Ayrı ayrı API çağrısı yapan hiçbir yer yok.
 ═══════════════════════════════════════ */
-async function fetchLivePrice() {
-  var btn=document.getElementById('liveBtn');
-  var icon=document.getElementById('liveBtnIcon');
-  icon.textContent='⏳'; btn.disabled=true;
-  try {
-    var res=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=try');
-    var data=await res.json();
-    var price=data?.bitcoin?.try;
-    if(!price) throw new Error();
-    document.getElementById('priceInput').value=new Intl.NumberFormat('tr-TR').format(price);
-    // fill retirement field too
-    document.getElementById('retBtcPrice').value=new Intl.NumberFormat('tr-TR').format(price);
-    showToast('📡 Canlı fiyat: '+fmtCur(price),'success');
-    icon.textContent='✅';
-    setTimeout(()=>{icon.textContent='📡';btn.disabled=false;},2000);
-  } catch {
-    showToast('Fiyat alınamadı.','error');
-    icon.textContent='❌';
-    setTimeout(()=>{icon.textContent='📡';btn.disabled=false;},2000);
-  }
-}
+var livePrice = null;      // Son çekilen canlı BTC/TRY fiyatı
+var livePriceTime = null;  // Son çekim zamanı (Date)
+var liveAutoTimer = null;
 
-async function getLiveBtcTry() {
+// Tek API çağrısı — başka hiçbir fonksiyon doğrudan fetch yapmaz
+async function fetchCoinGeckoTry() {
   var res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=try');
   var data = await res.json();
   return data?.bitcoin?.try || null;
 }
 
-async function refreshPortfoyDeger() {
-  var btn = document.getElementById('portRefreshBtn');
-  btn.textContent = '⏳'; btn.disabled = true;
+// Ana giriş noktası: fiyatı çek, sakla, tüm UI'ı güncelle
+async function refreshLivePrice(manual) {
+  var box = document.getElementById('livePriceBox');
+  var valEl = document.getElementById('livePriceVal');
+  if (manual) { box.style.opacity = '.6'; valEl.textContent = '⏳ Yükleniyor...'; }
   try {
-    var price = await getLiveBtcTry();
-    if (!price) throw new Error();
-    var state = computeState(getTxs());
-    var txs = getTxs();
-
-    // 1. Gerç. K/Z kartı
-    var portVal = state.totalBtc * price;
-    var unrealizedKZ = portVal - state.totalInvested;
-    var kzCard = document.getElementById('cardPortfoyDeger');
-    kzCard.textContent = (unrealizedKZ>=0?'+':'')+fmtCur(unrealizedKZ, 0);
-    kzCard.className = 'tile-val mono ' + (unrealizedKZ>=0?'teal':'red');
-    document.getElementById('cardPortfoyDegerSub').textContent = '📡 Canlı · ' + fmtCur(price, 0);
-
-    // 2. K/Z kartı — aynı canlı fiyatla
-    if (state.avgCost) {
-      var pct = ((price - state.avgCost) / state.avgCost) * 100;
-      var kzEl = document.getElementById('cardPL');
-      kzEl.textContent = (pct >= 0 ? '+' : '') + fmt(pct, 2) + '%';
-      kzEl.className = 'tile-val mono ' + (pct >= 0 ? 'green' : 'red');
-      document.getElementById('cardPLSub').textContent = '📡 Canlı · ' + fmtCur(price, 0);
-    }
-
-    // 3. Gelişmiş istatistikler — aynı canlı fiyatla
-    if (txs.length) {
-      var unrealized = state.totalBtc * price - state.totalInvested;
-      var advEl = document.getElementById('advStatsUnrealized');
-      if (advEl) {
-        advEl.textContent = (unrealized >= 0 ? '+' : '') + fmtCur(unrealized, 0);
-        advEl.className = unrealized >= 0 ? 'text-green mono' : 'text-red mono';
-      }
-      var priceEl = document.getElementById('advStatslivePrice');
-      if (priceEl) priceEl.textContent = '📡 ' + fmtCur(price, 0);
-    }
-
-    btn.textContent = '✅';
-    setTimeout(() => { btn.textContent = '↻'; btn.disabled = false; }, 2500);
-    showToast('📡 Canlı fiyatla güncellendi: ' + fmtCur(price, 0), 'success');
-  } catch {
-    showToast('Fiyat alınamadı.', 'error');
-    btn.textContent = '↻'; btn.disabled = false;
+    var price = await fetchCoinGeckoTry();
+    if (!price) throw new Error('boş yanıt');
+    livePrice = price;
+    livePriceTime = new Date();
+    applyLivePriceEverywhere();
+    if (manual) showToast('📡 Canlı fiyat güncellendi: ' + fmtCur(price, 0), 'success');
+  } catch (e) {
+    if (manual) showToast('Fiyat alınamadı, son bilinen değer kullanılıyor.', 'error');
+    // livePrice null değilse eski değer ekranda kalır (applyLivePriceEverywhere zaten çağrılmıştı)
+    if (livePrice) renderLivePriceCard(true);
+  } finally {
+    box.style.opacity = '1';
   }
 }
 
-async function refreshAdvStatsLive() {
-  // Port. Değer yenile butonuyla aynı fonksiyonu kullan — tutarlı olsun
-  try {
-    var price = await getLiveBtcTry();
-    if (!price) return;
-    var state = computeState(getTxs());
-    var txs = getTxs();
-    if (!txs.length) return;
-    var unrealized = state.totalBtc * price - state.totalInvested;
-    var el = document.getElementById('advStatsUnrealized');
-    if (el) {
-      el.textContent = (unrealized >= 0 ? '+' : '') + fmtCur(unrealized, 0);
-      el.className = unrealized >= 0 ? 'text-green mono' : 'text-red mono';
+// Canlı fiyat kartını (ana sayfa) güncelle
+function renderLivePriceCard(stale) {
+  var valEl = document.getElementById('livePriceVal');
+  var updEl = document.getElementById('livePriceUpdated');
+  if (!valEl) return;
+  if (livePrice) {
+    valEl.textContent = fmtCur(livePrice, 0);
+    valEl.className = 'live-price-val' + (stale ? ' stale' : '');
+    var timeStr = livePriceTime ? livePriceTime.toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'}) : '';
+    updEl.textContent = (stale ? '⚠️ Eski veri · ' : '') + timeStr;
+  } else {
+    valEl.textContent = 'Fiyat alınamadı';
+    updEl.textContent = '—';
+  }
+}
+
+// Canlı fiyata bağlı TÜM UI elemanlarını tek yerden güncelle
+function applyLivePriceEverywhere() {
+  if (!livePrice) return;
+  var price = livePrice;
+  var state = computeState(getTxs());
+  var txs = getTxs();
+
+  renderLivePriceCard(false);
+
+  // 1. Gerç. K/Z kartı (Portföy Değeri)
+  var kzCard = document.getElementById('cardPortfoyDeger');
+  if (kzCard) {
+    var unrealizedKZ = state.totalBtc * price - state.totalInvested;
+    kzCard.textContent = (unrealizedKZ >= 0 ? '+' : '') + fmtCur(unrealizedKZ, 0);
+    kzCard.className = 'tile-val mono ' + (unrealizedKZ >= 0 ? 'teal' : 'red');
+    var sub = document.getElementById('cardPortfoyDegerSub');
+    if (sub) sub.textContent = '📡 Canlı · ' + fmtCur(price, 0);
+  }
+
+  // 2. K/Z % kartı
+  if (state.avgCost) {
+    var pct = ((price - state.avgCost) / state.avgCost) * 100;
+    var kzEl = document.getElementById('cardPL');
+    if (kzEl) {
+      kzEl.textContent = (pct >= 0 ? '+' : '') + fmt(pct, 2) + '%';
+      kzEl.className = 'tile-val mono ' + (pct >= 0 ? 'green' : 'red');
     }
-    var elPrice = document.getElementById('advStatslivePrice');
-    if (elPrice) elPrice.textContent = '📡 ' + fmtCur(price, 0);
-  } catch { /* sessiz hata */ }
+    var plSub = document.getElementById('cardPLSub');
+    if (plSub) plSub.textContent = '📡 Canlı · ' + fmtCur(price, 0);
+  }
+
+  // 3. Gelişmiş istatistikler (Grafikler sayfası)
+  if (txs.length) {
+    var unrealized = state.totalBtc * price - state.totalInvested;
+    var advEl = document.getElementById('advStatsUnrealized');
+    if (advEl) {
+      advEl.textContent = (unrealized >= 0 ? '+' : '') + fmtCur(unrealized, 0);
+      advEl.className = unrealized >= 0 ? 'text-green mono' : 'text-red mono';
+    }
+    var priceEl = document.getElementById('advStatslivePrice');
+    if (priceEl) priceEl.textContent = '📡 ' + fmtCur(price, 0);
+  }
+}
+
+// "Fiyat Analizi" kartındaki 📡 Canlı butonu — yeni fetch yapmaz, cache'i kullanır
+function fillPriceInputFromLive() {
+  if (!livePrice) { showToast('Canlı fiyat henüz yüklenmedi, birazdan tekrar dene.', 'error'); return; }
+  document.getElementById('priceInput').value = new Intl.NumberFormat('tr-TR').format(livePrice);
+  showToast('📡 Canlı fiyat dolduruldu: ' + fmtCur(livePrice, 0), 'success');
+}
+
+// Bildirim/rapor gönderirken kullanılacak fiyat — cache varsa onu kullan, yoksa hemen çek
+async function getNotifPrice() {
+  if (livePrice) return livePrice;
+  await refreshLivePrice(false);
+  return livePrice || 0;
+}
+
+// 5 dakikada bir otomatik yenile
+function startLivePriceAutoRefresh() {
+  if (liveAutoTimer) clearInterval(liveAutoTimer);
+  liveAutoTimer = setInterval(() => refreshLivePrice(false), 5 * 60 * 1000);
 }
 
 /* ═══════════════════════════════════════
@@ -2579,7 +2468,8 @@ function renderAdvStats() {
     <div class="sim-row"><span class="text-muted">Çekilen Kâr</span><span class="text-blue mono">${fmtCur(state.totalWithdrawn,0)}</span></div>
   `;
   // Arka planda canlı fiyat çek ve güncelle
-  refreshAdvStatsLive();
+  // Canlı fiyat zaten cache'de varsa hemen uygula (ayrı fetch yapmaz)
+  applyLivePriceEverywhere();
 }
 
 /* ═══════════════════════════════════════
@@ -2928,116 +2818,6 @@ async function fetchFearGreed(){
 }
 
 /* ═══════════════════════════════════════
-   SCENARIO
-═══════════════════════════════════════ */
-function runScenario(){
-  var targetPrice=parsePrice(document.getElementById('scenarioPrice').value);
-  if(!targetPrice){showToast('Hedef fiyat gir!','error');return;}
-  var state=computeState(getTxs());
-  if(!state.totalBtc){showToast('Önce işlem kaydet!','error');return;}
-  var portfolioVal=state.totalBtc*targetPrice;
-  var profit=portfolioVal-state.totalInvested;
-  var pct=((targetPrice-state.avgCost)/state.avgCost)*100;
-  document.getElementById('scenarioResult').innerHTML=`
-    <div class="sim-result">
-      <div class="sim-row"><span>Hedef Fiyat</span><span class="text-gold mono">${fmtCur(targetPrice,0)}</span></div>
-      <div class="sim-row"><span>Portföy Değeri</span><span class="text-green mono">${fmtCur(portfolioVal,0)}</span></div>
-      <div class="sim-row"><span>Kâr</span><span class="text-green mono">+${fmtCur(profit,0)}</span></div>
-      <div class="sim-row"><span>K/Z %</span><span class="text-green mono">+${fmt(pct,1)}%</span></div>
-      <div class="sim-row"><span>X Katsayısı</span><span class="text-teal mono">${(targetPrice/state.avgCost).toFixed(2)}x</span></div>
-    </div>
-  `;
-}
-
-/* ═══════════════════════════════════════
-   CRISIS SIMULATOR
-═══════════════════════════════════════ */
-function runCrisis(dropPct){
-  var state=computeState(getTxs());
-  var lastTx=getTxs().slice(-1)[0];
-  if(!lastTx){showToast('Önce işlem kaydet!','error');return;}
-  var currentPrice=lastTx.price;
-  var newPrice=currentPrice*(1-dropPct/100);
-  var newVal=state.totalBtc*newPrice;
-  var newPct=((newPrice-state.avgCost)/state.avgCost)*100;
-  var nextBuy=dropPct<=10?buySteps.s1:dropPct<=25?buySteps.s2:buySteps.s3;
-  document.getElementById('crisisResult').innerHTML=`
-    <div class="sim-result">
-      <div class="sim-row"><span>-%${dropPct} sonrası fiyat</span><span class="text-red mono">${fmtCur(newPrice,0)}</span></div>
-      <div class="sim-row"><span>Portföy Değeri</span><span class="text-red mono">${fmtCur(newVal,0)}</span></div>
-      <div class="sim-row"><span>K/Z %</span><span class="${newPct>=0?'text-green':'text-red'} mono">${fmt(newPct,1)}%</span></div>
-      <div class="sim-row"><span>Mekanik Alım</span><span class="text-gold mono">${fmtCur(nextBuy,0)}</span></div>
-      <div style="margin-top:8px;font-size:.78rem;color:var(--dim);line-height:1.5">
-        ${newPct<0?'😤 Kâğıt zarar! Ama sen paniklemiyorsun — mekanik strateji devreye giriyor.':'😊 Hâlâ kârdasın! Bitcoin güçlü.'}
-      </div>
-    </div>
-  `;
-}
-
-/* ═══════════════════════════════════════
-   RETIREMENT CALCULATOR
-═══════════════════════════════════════ */
-function runRetirement(){
-  var monthly=parseInt(document.getElementById('retMonthly').value)||0;
-  var years=parseInt(document.getElementById('retYears').value)||0;
-  var growth=parseFloat(document.getElementById('retGrowth').value)||30;
-  var btcPrice=parsePrice(document.getElementById('retBtcPrice').value)||3500000;
-  if(!monthly||!years){showToast('Tüm alanları doldur!','error');return;}
-  var totalInvested=monthly*12*years;
-  var r=growth/100;
-  var futureVal=monthly*12*((Math.pow(1+r,years)-1)/r)*(1+r);
-  var btcAccumulated=0;
-  var monthlyBtc=monthly/btcPrice;
-  for(var i=0;i<years*12;i++){
-    btcAccumulated+=monthlyBtc;
-    btcPrice*=Math.pow(1+r,1/12);
-  }
-  var finalBtcPrice=btcPrice;
-  var finalValue=btcAccumulated*finalBtcPrice;
-  document.getElementById('retirementResult').innerHTML=`
-    <div class="sim-result" style="margin-top:10px">
-      <div class="sim-row"><span>Toplam Yatırım</span><span class="text-gold mono">${fmtCur(totalInvested,0)}</span></div>
-      <div class="sim-row"><span>Tahmini BTC</span><span class="text-teal mono">${btcAccumulated.toFixed(4)}</span></div>
-      <div class="sim-row"><span>${years} yıl sonra BTC fiyatı</span><span class="text-blue mono">${fmtCur(finalBtcPrice,0)}</span></div>
-      <div class="sim-row"><span>Tahmini Portföy Değeri</span><span class="text-green mono">${fmtCur(finalValue,0)}</span></div>
-      <div class="sim-row"><span>Katsayı</span><span class="text-green mono">${(finalValue/totalInvested).toFixed(1)}x</span></div>
-      <div style="margin-top:8px;font-size:.75rem;color:var(--muted)">*Yıllık %${growth} büyüme varsayımıyla hesaplanmıştır. Gerçek sonuçlar değişir.</div>
-    </div>
-  `;
-}
-
-/* ═══════════════════════════════════════
-   WHAT IF
-═══════════════════════════════════════ */
-var BTC_HISTORY={
-  2020:{price:25000*35}, 2021:{price:70000*9.5}, 2022:{price:16000*18}, 2023:{price:44000*30}
-};
-function runWhatIf(year, defaultAmount){
-  var amount=parseInt(document.getElementById('whatifAmount').value)||defaultAmount;
-  var startPrice=BTC_HISTORY[year]?.price||500000;
-  var currentPrice=3500000;
-  var months=Math.floor((2025-year)*12);
-  var btcAccumulated=0;
-  var totalInvested=0;
-  for(var i=0;i<months;i++){
-    var p=startPrice*Math.pow(currentPrice/startPrice,i/months);
-    btcAccumulated+=amount/p;
-    totalInvested+=amount;
-  }
-  var currentVal=btcAccumulated*currentPrice;
-  document.getElementById('whatifResult').innerHTML=`
-    <div class="sim-result">
-      <div class="sim-row"><span>${year}'den bu yana aylık ${fmtCur(amount)}</span><span></span></div>
-      <div class="sim-row"><span>Toplam Yatırım</span><span class="text-gold mono">${fmtCur(totalInvested,0)}</span></div>
-      <div class="sim-row"><span>Biriken BTC</span><span class="text-teal mono">${btcAccumulated.toFixed(4)}</span></div>
-      <div class="sim-row"><span>Bugünkü Değer</span><span class="text-green mono">${fmtCur(currentVal,0)}</span></div>
-      <div class="sim-row"><span>Katsayı</span><span class="text-green mono">${(currentVal/totalInvested).toFixed(1)}x 🚀</span></div>
-      <div style="margin-top:8px;font-size:.75rem;color:var(--dim)">Geç kalmadın — şimdiden başlamak her zaman en iyi zamandır! 💪</div>
-    </div>
-  `;
-}
-
-/* ═══════════════════════════════════════
    DELETE
 ═══════════════════════════════════════ */
 function askDelete(index){
@@ -3129,7 +2909,7 @@ async function autoSaveToDrive() {
     await fetch(DRIVE_URL, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({transactions:allTransactions, portfolios, goal:userGoal, investDays, steps:buySteps, badgeCount:earnedBadges.length, notifSettings}),
+      body: JSON.stringify({transactions:allTransactions, portfolios, goal:userGoal, investDays, steps:buySteps, badgeCount:earnedBadges.length, notifSettings, currentState:{currentPrice: livePrice || 0}}),
       mode: 'no-cors'
     });
     console.log('Otomatik Drive senkronizasyonu tamam.');
@@ -3165,7 +2945,7 @@ async function driveSaveConfirmed(){
   var btn=document.getElementById('driveSaveBtn');
   btn.textContent='⏳'; btn.disabled=true;
   try {
-    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactions:allTransactions,portfolios,goal:userGoal,investDays,steps:buySteps,badgeCount:earnedBadges.length,notifSettings}),mode:'no-cors'});
+    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactions:allTransactions,portfolios,goal:userGoal,investDays,steps:buySteps,badgeCount:earnedBadges.length,notifSettings,currentState:{currentPrice: livePrice || 0}}),mode:'no-cors'});
     showToast('☁️ Drive\'a kaydedildi!','success');
     btn.textContent='✅'; btn.classList.add('saving');
     setTimeout(()=>{btn.textContent='☁️ Kaydet';btn.disabled=false;btn.classList.remove('saving');},2500);
@@ -3624,7 +3404,7 @@ async function driveSaveNotif() {
   try {
     var state = computeState(getTxs());
     // 🔥 ÖNEMLI: Canlı fiyat çek!
-    var currentPrice = await getLiveBtcTry();
+    var currentPrice = await getNotifPrice();
     await fetch(url, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -3649,27 +3429,12 @@ async function driveSaveNotif() {
   } catch {}
 }
 
-async function sendTestNotification(){
-  var btn=document.getElementById('testBtn');
-  btn.textContent='⏳'; btn.disabled=true;
-  try {
-    var currentPrice = await getLiveBtcTry();
-    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'TEST',currentPrice:currentPrice||0}),mode:'no-cors'});
-    showToast('🧪 Test bildirimi gönderildi!','success');
-    btn.textContent='✅';
-    setTimeout(()=>{btn.textContent='🧪 Test Bildirimi Gönder';btn.disabled=false;},2500);
-  } catch(err){
-    showToast('Test hatası: '+err.message,'error');
-    btn.textContent='🧪 Test Bildirimi Gönder'; btn.disabled=false;
-  }
-}
-
 async function sendInstantReport(){
   var btn=document.getElementById('instantReportBtn');
   btn.textContent='⏳'; btn.disabled=true;
   try {
     // 🔥 ÖNEMLI: Canlı fiyat çek!
-    var currentPrice = await getLiveBtcTry();
+    var currentPrice = await getNotifPrice();
     // Güncel veriyi ve rapor isteğini TEK seferde gönder
     await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'REPORT',transactions:allTransactions,portfolios,goal:userGoal,investDays,steps:buySteps,badgeCount:earnedBadges.length,notifSettings,currentPrice:currentPrice||0}),mode:'no-cors'});
     showToast('📊 Anlık rapor gönderildi!','success');
@@ -3682,208 +3447,6 @@ async function sendInstantReport(){
 }
 
 /* ═══════════════════════════════════════
-   AI DANIŞMAN (Gemini)
-═══════════════════════════════════════ */
-var aiHistory = [];
-var GEMINI_MODEL = 'gemini-2.0-flash';
-var GEMINI_KEY = 'AQ.Ab8RN6ICCe0bijAQMYCRQ0S3ZJ6A0ZP2wZiijxr8uV5dp7Q7pw';
-
-function saveAiKey() {
-  var key = document.getElementById('aiKeyInput').value.trim();
-  if (!key) { showToast('API key boş!', 'error'); return; }
-  localStorage.setItem('gemini_api_key', key);
-  showToast('🔑 API key kaydedildi!', 'success');
-  document.getElementById('aiKeySetup').style.display = 'none';
-}
-
-function getAiKey() {
-  return localStorage.getItem('gemini_api_key') || GEMINI_KEY;
-}
-
-function initAiPage() {
-  // Key gömülü ama kullanıcı değiştirebilsin
-  var key = getAiKey();
-  document.getElementById('aiKeyInput').value = key;
-  document.getElementById('aiKeySetup').style.display = 'none';
-}
-
-function buildAiContext() {
-  var txs = getTxs();
-  var state = computeState(txs);
-  var lastPrice = txs.length ? txs[txs.length - 1].price : 0;
-  var buyTxs = txs.filter(t => t.type !== 'SELL');
-  var sellTxs = txs.filter(t => t.type === 'SELL');
-  var fgEl = document.getElementById('fgValue');
-  var fg = fgEl ? fgEl.textContent : '?';
-
-  var ctx = `Sen bir Bitcoin yatırım danışmanısın. Kullanıcı "Mekanik DCA" stratejisi uyguluyor.
-
-STRATEJI KURALLARI:
-- Fiyat ortalama maliyetin altına düştüğünde kademeli alım yapılır
-- Kademe 1 (%5-10 düşüş): ${buySteps.s1} TL
-- Kademe 2 (%10-25 düşüş): ${buySteps.s2} TL  
-- Kademe 3 (%25+ düşüş): ${buySteps.s3} TL
-- İlk alım tutarı: ${buySteps.init} TL
-- Kâr bölgesinde satış yapılır (sadece kârdan çıkış, anapara korunur)
-- Yarı/Yarı modu: Kârın yarısı realize, yarısı anaparaya eklenir
-- Yatırım günleri: Ayın ${investDays.join(', ')}. günleri
-
-PORTFÖY DURUMU:
-- Toplam yatırım: ${Math.round(state.totalInvested).toLocaleString('tr-TR')} TL
-- Toplam BTC: ${state.totalBtc.toFixed(8)} BTC
-- Ortalama maliyet: ${Math.round(state.avgCost || 0).toLocaleString('tr-TR')} TL
-- Çekilen kâr: ${Math.round(state.totalWithdrawn).toLocaleString('tr-TR')} TL
-- Son işlem fiyatı: ${Math.round(lastPrice).toLocaleString('tr-TR')} TL
-- Toplam işlem: ${buyTxs.length} alım, ${sellTxs.length} satış
-- Fear & Greed Index: ${fg}`;
-
-  if (userGoal && userGoal.btc) {
-    var goalPct = ((state.totalBtc / userGoal.btc) * 100).toFixed(1);
-    ctx += `\n- Hedef: ${userGoal.name} — %${goalPct} tamamlandı`;
-  }
-
-  ctx += `\n\nKURALLAR:
-- Türkçe cevap ver, kısa ve öz ol
-- Emoji kullan ama abartma
-- Kesin yatırım tavsiyesi verme, "finansal danışman değilim" hatırlat
-- Mekanik stratejiyi destekle, duygusal kararlardan uzak tut
-- Kullanıcının portföy verileriyle somut analiz yap`;
-
-  return ctx;
-}
-
-function askAi(question) {
-  document.getElementById('aiInput').value = question;
-  sendAiMsg();
-}
-
-async function sendAiMsg() {
-  var input = document.getElementById('aiInput');
-  var msg = input.value.trim();
-  if (!msg) return;
-
-  var key = getAiKey();
-  if (!key) {
-    showToast('🔑 Önce Gemini API key gir!', 'error');
-    document.getElementById('aiKeySetup').style.display = 'block';
-    return;
-  }
-
-  // User mesajını göster
-  appendAiMsg(msg, 'user');
-  input.value = '';
-  input.style.height = 'auto';
-
-  // Typing indicator
-  var typing = document.createElement('div');
-  typing.className = 'ai-typing';
-  typing.id = 'aiTyping';
-  typing.innerHTML = '<span></span><span></span><span></span>';
-  document.getElementById('aiMessages').appendChild(typing);
-  scrollAiBottom();
-
-  // Disable input
-  var btn = document.getElementById('aiSendBtn');
-  btn.disabled = true;
-
-  try {
-    // Geçmiş mesajları hazırla
-    aiHistory.push({ role: 'user', parts: [{ text: msg }] });
-
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODEL + ':generateContent';
-
-    var body = {
-      systemInstruction: { parts: [{ text: buildAiContext() }] },
-      contents: aiHistory,
-      generationConfig: {
-        maxOutputTokens: 600,
-        temperature: 0.7,
-        topP: 0.9
-      }
-    };
-
-    var bodyStr = JSON.stringify(body);
-    var res = null;
-    var data = null;
-
-    // Yöntem 1: ?key= parametresi (klasik AIzaSy... key'ler)
-    res = await fetch(url + '?key=' + key, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: bodyStr
-    });
-    if (res.ok) { data = await res.json(); }
-
-    // Yöntem 2: x-goog-api-key header (yeni format key'ler)
-    if (!data || data.error) {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: bodyStr
-      });
-      if (res.ok) { data = await res.json(); }
-    }
-
-    // Yöntem 3: Bearer token
-    if (!data || data.error) {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-        body: bodyStr
-      });
-      data = await res.json();
-    }
-
-    // Typing kaldır
-    var typingEl = document.getElementById('aiTyping');
-    if (typingEl) typingEl.remove();
-
-    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-      var reply = data.candidates[0].content.parts[0].text;
-      aiHistory.push({ role: 'model', parts: [{ text: reply }] });
-      appendAiMsg(reply, 'bot');
-    } else if (data.error) {
-      appendAiMsg('Hata: ' + (data.error.message || 'Bilinmeyen hata'), 'bot');
-    } else {
-      appendAiMsg('Yanıt alınamadı. Tekrar dene.', 'bot');
-    }
-
-    // Geçmişi max 10 mesajla sınırla (token tasarrufu)
-    if (aiHistory.length > 10) {
-      aiHistory = aiHistory.slice(-10);
-    }
-
-  } catch(err) {
-    var typingEl = document.getElementById('aiTyping');
-    if (typingEl) typingEl.remove();
-    appendAiMsg('Bağlantı hatası: ' + err.message, 'bot');
-  }
-
-  btn.disabled = false;
-}
-
-function appendAiMsg(text, type) {
-  var div = document.createElement('div');
-  div.className = 'ai-msg ' + type;
-  if (type === 'bot') {
-    div.innerHTML = '<span class="ai-label">🤖 BTC Danışman</span>' + escapeHtml(text);
-  } else {
-    div.innerHTML = '<span class="ai-label">Sen</span>' + escapeHtml(text);
-  }
-  document.getElementById('aiMessages').appendChild(div);
-  scrollAiBottom();
-}
-
-function escapeHtml(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-}
-
-function scrollAiBottom() {
-  var el = document.getElementById('aiMessages');
-  setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
-}
-
-/* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
 applyTheme();
@@ -3891,52 +3454,10 @@ renderAll();
 fetchFearGreed();
 startBtcAutoRefresh();
 autoSyncFromDrive();
-initAiPage();
 
-// Dakikada bir canlı veri güncelle
-setInterval(async () => {
-  try {
-    var price = await getLiveBtcTry();
-    if (!price) return;
-    var state = computeState(getTxs());
-    var txs = getTxs();
-
-    // Port. Değer / Gerç. K/Z kartı
-    var portVal = state.totalBtc * price;
-    var unrealizedKZ = portVal - state.totalInvested;
-    var kzCard = document.getElementById('cardPortfoyDeger');
-    kzCard.textContent = (unrealizedKZ>=0?'+':'')+fmtCur(unrealizedKZ,0);
-    kzCard.className = 'tile-val mono '+(unrealizedKZ>=0?'teal':'red');
-    document.getElementById('cardPortfoyDegerSub').textContent = '📡 Canlı · '+fmtCur(price,0);
-
-    // K/Z % kartı
-    if (state.avgCost) {
-      var pct = ((price - state.avgCost) / state.avgCost) * 100;
-      var el = document.getElementById('cardPL');
-      el.textContent = (pct>=0?'+':'')+fmt(pct,2)+'%';
-      el.className = 'tile-val mono '+(pct>=0?'green':'red');
-      document.getElementById('cardPLSub').textContent = '📡 Canlı · '+fmtCur(price,0);
-    }
-
-    // Gelişmiş istatistikler
-    if (txs.length) {
-      var unrealized = state.totalBtc * price - state.totalInvested;
-      var advEl = document.getElementById('advStatsUnrealized');
-      if (advEl) {
-        advEl.textContent = (unrealized>=0?'+':'')+fmtCur(unrealized,0);
-        advEl.className = unrealized>=0?'text-green mono':'text-red mono';
-      }
-      var priceEl = document.getElementById('advStatslivePrice');
-      if (priceEl) priceEl.textContent = '📡 '+fmtCur(price,0);
-    }
-
-    // Emeklilik fiyat alanı
-    var retEl = document.getElementById('retBtcPrice');
-    if (retEl && !retEl.dataset.userEdited) {
-      retEl.value = new Intl.NumberFormat('tr-TR').format(price);
-    }
-  } catch { /* sessiz hata */ }
-}, 60000);
+// Açılışta canlı fiyatı bir kez çek, sonra 5dk'da bir otomatik yenile
+refreshLivePrice(false);
+startLivePriceAutoRefresh();
 </script>
 </body>
 </html>
