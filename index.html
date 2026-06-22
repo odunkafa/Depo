@@ -3056,7 +3056,7 @@ function renderKova() {
         </filter>
       </defs>
       <!-- Kova gövdesi arka plan -->
-      <path d="M20,20 L120,20 L105,150 L35,150 Z" fill="url(#kovaBg)" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
+      <path d="M20,20 L120,20 L105,150 L35,150 Z" fill="url(#kovaBg)" stroke="var(--border)" stroke-width="1.5"/>
       <!-- Su dolumu -->
       <g clip-path="url(#kovaClip)">
         <rect x="0" y="${fillY}" width="140" height="${fillHeight + 20}" fill="url(#kovaFill)" opacity=".85"/>
@@ -3064,9 +3064,9 @@ function renderKova() {
         ${fillPct > 2 ? `<path d="M10,${fillY} Q35,${fillY-4} 70,${fillY} Q105,${fillY+4} 130,${fillY}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>` : ''}
       </g>
       <!-- Kova kenarı üst çizgi -->
-      <path d="M20,20 L120,20 L105,150 L35,150 Z" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+      <path d="M20,20 L120,20 L105,150 L35,150 Z" fill="none" stroke="var(--border)" stroke-width="1.5"/>
       <!-- Kova sapı -->
-      <path d="M30,20 Q70,5 110,20" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M30,20 Q70,5 110,20" fill="none" stroke="var(--border)" stroke-width="2" stroke-linecap="round"/>
       <!-- Yüzde yazısı -->
       <text x="70" y="${fillPct > 15 ? fillY + 16 : fillY - 8}" text-anchor="middle" fill="${fillPct > 15 ? 'white' : fillColor}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="900" filter="url(#glow)">${fillPct.toFixed(1)}%</text>
       <!-- Işık efekti -->
