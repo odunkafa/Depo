@@ -140,6 +140,34 @@ body::before{
 .nav-icon{font-size:1.5rem;line-height:1;}
 .nav-label{font-size:.72rem;font-weight:700;letter-spacing:.3px;}
 
+/* ── AI CHAT ── */
+.ai-chat-container{display:flex;flex-direction:column;height:100%;padding-bottom:0!important;}
+.ai-messages{flex:1;overflow-y:auto;padding:10px 0;display:flex;flex-direction:column;gap:10px;}
+.ai-msg{max-width:85%;padding:11px 14px;border-radius:14px;font-size:.88rem;line-height:1.55;word-wrap:break-word;white-space:pre-wrap;}
+.ai-msg.user{align-self:flex-end;background:linear-gradient(135deg,#f7931a,#d97000);color:#fff;border-bottom-right-radius:4px;}
+.ai-msg.bot{align-self:flex-start;background:var(--card2);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px;}
+.ai-msg.bot .ai-label{font-size:.68rem;font-weight:700;color:var(--teal);margin-bottom:4px;display:block;}
+.ai-msg.user .ai-label{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:4px;display:block;}
+.ai-input-area{display:flex;gap:8px;padding:12px 0;border-top:1px solid var(--border);flex-shrink:0;}
+.ai-input{flex:1;background:var(--card2);border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:.9rem;outline:none;resize:none;min-height:44px;max-height:100px;}
+.ai-input:focus{border-color:var(--gold);}
+.ai-input::placeholder{color:var(--muted);}
+.ai-send-btn{background:linear-gradient(135deg,#f7931a,#d97000);border:none;border-radius:12px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;flex-shrink:0;transition:.15s;}
+.ai-send-btn:active{transform:scale(.92);}
+.ai-send-btn:disabled{opacity:.4;cursor:not-allowed;}
+.ai-typing{align-self:flex-start;padding:10px 16px;background:var(--card2);border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:4px;display:flex;gap:4px;align-items:center;}
+.ai-typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:aiDot 1.2s infinite;}
+.ai-typing span:nth-child(2){animation-delay:.2s;}
+.ai-typing span:nth-child(3){animation-delay:.4s;}
+@keyframes aiDot{0%,80%,100%{opacity:.3;transform:scale(.8);}40%{opacity:1;transform:scale(1.1);}}
+.ai-quick-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.ai-quick{background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:6px 12px;font-size:.78rem;font-weight:600;color:var(--dim);cursor:pointer;font-family:inherit;transition:.15s;}
+.ai-quick:hover{border-color:var(--gold);color:var(--gold);}
+.ai-key-row{display:flex;gap:8px;margin-bottom:12px;}
+.ai-key-input{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.78rem;outline:none;}
+.ai-key-input:focus{border-color:var(--teal);}
+.ai-key-save{background:var(--teal);border:none;border-radius:10px;padding:9px 14px;color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit;}
+
 /* ── CARDS ── */
 .card{
   background:var(--card);border:1px solid var(--border);
@@ -1322,6 +1350,47 @@ tbody tr:active{background:var(--card2);}
 
   </div><!-- /page-settings -->
 
+  <!-- ═══ AI DANIŞMAN ═══ -->
+  <div class="page" id="page-ai">
+    <div class="ai-chat-container">
+
+      <!-- API Key ayarı -->
+      <div id="aiKeySetup" style="margin-bottom:10px">
+        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">🔑 Gemini API Key</div>
+        <div class="ai-key-row">
+          <input type="password" class="ai-key-input" id="aiKeyInput" placeholder="AIza...">
+          <button class="ai-key-save" onclick="saveAiKey()">Kaydet</button>
+        </div>
+      </div>
+
+      <!-- Hızlı sorular -->
+      <div class="ai-quick-btns" id="aiQuickBtns">
+        <button class="ai-quick" onclick="askAi('Portföyümü analiz et')">📊 Portföy Analizi</button>
+        <button class="ai-quick" onclick="askAi('Şu an almalı mıyım?')">🛒 Almalı mıyım?</button>
+        <button class="ai-quick" onclick="askAi('Stratejimi değerlendir')">🎯 Strateji</button>
+        <button class="ai-quick" onclick="askAi('Piyasa ne durumda?')">🌡️ Piyasa</button>
+        <button class="ai-quick" onclick="askAi('Risk analizimi yap')">⚠️ Risk</button>
+        <button class="ai-quick" onclick="askAi('Bir sonraki adımım ne olmalı?')">🚀 Sonraki Adım</button>
+      </div>
+
+      <!-- Mesaj alanı -->
+      <div class="ai-messages" id="aiMessages">
+        <div class="ai-msg bot">
+          <span class="ai-label">🤖 BTC Danışman</span>
+          Merhaba! Ben senin BTC yatırım danışmanınım. Portföy verilerini, stratejini ve piyasa durumunu analiz edebilirim.
+
+Yukarıdaki hızlı butonları kullanabilir ya da istediğin soruyu yazabilirsin!</div>
+      </div>
+
+      <!-- Input -->
+      <div class="ai-input-area">
+        <textarea class="ai-input" id="aiInput" placeholder="Sorunuzu yazın..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg();}"></textarea>
+        <button class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</button>
+      </div>
+
+    </div>
+  </div><!-- /page-ai -->
+
 </div><!-- /pages -->
 
 <!-- BOTTOM NAV -->
@@ -1341,6 +1410,10 @@ tbody tr:active{background:var(--card2);}
   <button class="nav-item" onclick="switchPage('settings',this)">
     <span class="nav-icon">⚙️</span>
     <span class="nav-label">Ayarlar</span>
+  </button>
+  <button class="nav-item" onclick="switchPage('ai',this)">
+    <span class="nav-icon">🤖</span>
+    <span class="nav-label">AI</span>
   </button>
 </nav>
 
@@ -1598,6 +1671,7 @@ function switchPage(name, btn) {
   if (name==='charts') { renderCharts(computeState(getTxs())); renderAdvStats(); loadBtcLiveChart(btcCurrentPeriod); }
   if (name==='tools') { fetchFearGreed(); renderKova(); }
   if (name==='settings') { loadNotifSettings(); }
+  if (name==='ai') { initAiPage(); scrollAiBottom(); }
 }
 
 function toggleCard(id) {
@@ -3608,13 +3682,190 @@ async function sendInstantReport(){
 }
 
 /* ═══════════════════════════════════════
+   AI DANIŞMAN (Gemini)
+═══════════════════════════════════════ */
+var aiHistory = [];
+var GEMINI_MODEL = 'gemini-2.0-flash';
+var GEMINI_KEY = 'AQ.Ab8RN6ICCe0bijAQMYCRQ0S3ZJ6A0ZP2wZiijxr8uV5dp7Q7pw';
+
+function saveAiKey() {
+  var key = document.getElementById('aiKeyInput').value.trim();
+  if (!key) { showToast('API key boş!', 'error'); return; }
+  localStorage.setItem('gemini_api_key', key);
+  showToast('🔑 API key kaydedildi!', 'success');
+  document.getElementById('aiKeySetup').style.display = 'none';
+}
+
+function getAiKey() {
+  return localStorage.getItem('gemini_api_key') || GEMINI_KEY;
+}
+
+function initAiPage() {
+  // Key zaten gömülü, setup'ı gizle
+  document.getElementById('aiKeySetup').style.display = 'none';
+}
+
+function buildAiContext() {
+  var txs = getTxs();
+  var state = computeState(txs);
+  var lastPrice = txs.length ? txs[txs.length - 1].price : 0;
+  var buyTxs = txs.filter(t => t.type !== 'SELL');
+  var sellTxs = txs.filter(t => t.type === 'SELL');
+  var fgEl = document.getElementById('fgValue');
+  var fg = fgEl ? fgEl.textContent : '?';
+
+  var ctx = `Sen bir Bitcoin yatırım danışmanısın. Kullanıcı "Mekanik DCA" stratejisi uyguluyor.
+
+STRATEJI KURALLARI:
+- Fiyat ortalama maliyetin altına düştüğünde kademeli alım yapılır
+- Kademe 1 (%5-10 düşüş): ${buySteps.s1} TL
+- Kademe 2 (%10-25 düşüş): ${buySteps.s2} TL  
+- Kademe 3 (%25+ düşüş): ${buySteps.s3} TL
+- İlk alım tutarı: ${buySteps.init} TL
+- Kâr bölgesinde satış yapılır (sadece kârdan çıkış, anapara korunur)
+- Yarı/Yarı modu: Kârın yarısı realize, yarısı anaparaya eklenir
+- Yatırım günleri: Ayın ${investDays.join(', ')}. günleri
+
+PORTFÖY DURUMU:
+- Toplam yatırım: ${Math.round(state.totalInvested).toLocaleString('tr-TR')} TL
+- Toplam BTC: ${state.totalBtc.toFixed(8)} BTC
+- Ortalama maliyet: ${Math.round(state.avgCost || 0).toLocaleString('tr-TR')} TL
+- Çekilen kâr: ${Math.round(state.totalWithdrawn).toLocaleString('tr-TR')} TL
+- Son işlem fiyatı: ${Math.round(lastPrice).toLocaleString('tr-TR')} TL
+- Toplam işlem: ${buyTxs.length} alım, ${sellTxs.length} satış
+- Fear & Greed Index: ${fg}`;
+
+  if (userGoal && userGoal.btc) {
+    var goalPct = ((state.totalBtc / userGoal.btc) * 100).toFixed(1);
+    ctx += `\n- Hedef: ${userGoal.name} — %${goalPct} tamamlandı`;
+  }
+
+  ctx += `\n\nKURALLAR:
+- Türkçe cevap ver, kısa ve öz ol
+- Emoji kullan ama abartma
+- Kesin yatırım tavsiyesi verme, "finansal danışman değilim" hatırlat
+- Mekanik stratejiyi destekle, duygusal kararlardan uzak tut
+- Kullanıcının portföy verileriyle somut analiz yap`;
+
+  return ctx;
+}
+
+function askAi(question) {
+  document.getElementById('aiInput').value = question;
+  sendAiMsg();
+}
+
+async function sendAiMsg() {
+  var input = document.getElementById('aiInput');
+  var msg = input.value.trim();
+  if (!msg) return;
+
+  var key = getAiKey();
+  if (!key) {
+    showToast('🔑 Önce Gemini API key gir!', 'error');
+    document.getElementById('aiKeySetup').style.display = 'block';
+    return;
+  }
+
+  // User mesajını göster
+  appendAiMsg(msg, 'user');
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Typing indicator
+  var typing = document.createElement('div');
+  typing.className = 'ai-typing';
+  typing.id = 'aiTyping';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  document.getElementById('aiMessages').appendChild(typing);
+  scrollAiBottom();
+
+  // Disable input
+  var btn = document.getElementById('aiSendBtn');
+  btn.disabled = true;
+
+  try {
+    // Geçmiş mesajları hazırla
+    aiHistory.push({ role: 'user', parts: [{ text: msg }] });
+
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODEL + ':generateContent?key=' + key;
+
+    var body = {
+      systemInstruction: { parts: [{ text: buildAiContext() }] },
+      contents: aiHistory,
+      generationConfig: {
+        maxOutputTokens: 600,
+        temperature: 0.7,
+        topP: 0.9
+      }
+    };
+
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    var data = await res.json();
+
+    // Typing kaldır
+    var typingEl = document.getElementById('aiTyping');
+    if (typingEl) typingEl.remove();
+
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      var reply = data.candidates[0].content.parts[0].text;
+      aiHistory.push({ role: 'model', parts: [{ text: reply }] });
+      appendAiMsg(reply, 'bot');
+    } else if (data.error) {
+      appendAiMsg('Hata: ' + (data.error.message || 'Bilinmeyen hata'), 'bot');
+    } else {
+      appendAiMsg('Yanıt alınamadı. Tekrar dene.', 'bot');
+    }
+
+    // Geçmişi max 10 mesajla sınırla (token tasarrufu)
+    if (aiHistory.length > 10) {
+      aiHistory = aiHistory.slice(-10);
+    }
+
+  } catch(err) {
+    var typingEl = document.getElementById('aiTyping');
+    if (typingEl) typingEl.remove();
+    appendAiMsg('Bağlantı hatası: ' + err.message, 'bot');
+  }
+
+  btn.disabled = false;
+}
+
+function appendAiMsg(text, type) {
+  var div = document.createElement('div');
+  div.className = 'ai-msg ' + type;
+  if (type === 'bot') {
+    div.innerHTML = '<span class="ai-label">🤖 BTC Danışman</span>' + escapeHtml(text);
+  } else {
+    div.innerHTML = '<span class="ai-label">Sen</span>' + escapeHtml(text);
+  }
+  document.getElementById('aiMessages').appendChild(div);
+  scrollAiBottom();
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function scrollAiBottom() {
+  var el = document.getElementById('aiMessages');
+  setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+}
+
+/* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
 applyTheme();
 renderAll();
 fetchFearGreed();
 startBtcAutoRefresh();
-autoSyncFromDrive(); // Açılışta sessizce Drive'dan kontrol et
+autoSyncFromDrive();
+initAiPage();
 
 // Dakikada bir canlı veri güncelle
 setInterval(async () => {
