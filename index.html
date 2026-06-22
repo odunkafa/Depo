@@ -3701,7 +3701,9 @@ function getAiKey() {
 }
 
 function initAiPage() {
-  // Key zaten gömülü, setup'ı gizle
+  // Key gömülü ama kullanıcı değiştirebilsin
+  var key = getAiKey();
+  document.getElementById('aiKeyInput').value = key;
   document.getElementById('aiKeySetup').style.display = 'none';
 }
 
@@ -3788,7 +3790,7 @@ async function sendAiMsg() {
     // Geçmiş mesajları hazırla
     aiHistory.push({ role: 'user', parts: [{ text: msg }] });
 
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODEL + ':generateContent?key=' + key;
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODEL + ':generateContent';
 
     var body = {
       systemInstruction: { parts: [{ text: buildAiContext() }] },
@@ -3800,13 +3802,37 @@ async function sendAiMsg() {
       }
     };
 
-    var res = await fetch(url, {
+    var bodyStr = JSON.stringify(body);
+    var res = null;
+    var data = null;
+
+    // Yöntem 1: ?key= parametresi (klasik AIzaSy... key'ler)
+    res = await fetch(url + '?key=' + key, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: bodyStr
     });
+    if (res.ok) { data = await res.json(); }
 
-    var data = await res.json();
+    // Yöntem 2: x-goog-api-key header (yeni format key'ler)
+    if (!data || data.error) {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: bodyStr
+      });
+      if (res.ok) { data = await res.json(); }
+    }
+
+    // Yöntem 3: Bearer token
+    if (!data || data.error) {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: bodyStr
+      });
+      data = await res.json();
+    }
 
     // Typing kaldır
     var typingEl = document.getElementById('aiTyping');
