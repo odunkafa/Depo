@@ -694,90 +694,6 @@ tbody tr:active{background:var(--card2);}
       </div>
     </div>
 
-    <!-- Fiyat girişi -->
-    <div class="card always-open">
-      <div class="card-header" style="cursor:default">
-        <div class="card-title">🔍 Fiyat Analizi</div>
-      </div>
-      <div class="card-body">
-        <div class="row" style="margin-bottom:10px">
-          <div class="col">
-            <label class="input-label">Bitcoin Fiyatı (₺)</label>
-            <input class="input-field" id="priceInput" type="text" placeholder="örn: 3.500.000"
-              oninput="formatPrice(this)" onkeydown="if(event.key==='Enter') analyzePrice()">
-          </div>
-        </div>
-        <div class="row">
-          <button class="btn btn-ghost btn-sm" id="liveBtn" onclick="fillPriceInputFromLive()">
-            <span id="liveBtnIcon">📡</span> Canlı
-          </button>
-          <button class="btn btn-gold" onclick="analyzePrice()" style="flex:1;justify-content:center">
-            🔍 Analiz Et
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Analiz sonucu -->
-    <div class="analysis-box" id="analysisBox">
-      <!-- Mod durumu bandı -->
-      <div id="modeBand" style="display:none;padding:8px 14px;border-bottom:1px solid var(--border);font-size:.76rem;font-weight:600;display:flex;align-items:center;gap:7px"></div>
-      <div class="analysis-top">
-        <div class="a-badge">
-          <div class="a-icon" id="analysisIcon">⚡</div>
-          <div>
-            <div class="a-title" id="analysisTitle">—</div>
-            <div class="a-desc" id="analysisDesc">—</div>
-          </div>
-        </div>
-        <button onclick="document.getElementById('analysisBox').classList.remove('visible')" style="background:rgba(255,255,255,.07);border:none;color:var(--muted);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
-      </div>
-      <div class="metrics-grid" id="analysisGrid"></div>
-      <!-- Satış detayı (yarı/yarı modunda gösterilir) -->
-      <div id="sellDetailBand" style="display:none;padding:10px 14px;border-top:1px solid var(--border);font-size:.8rem;line-height:1.6"></div>
-      <!-- Satış döngü analizi (satış modunda gösterilir) -->
-      <div class="cycle-band" id="cycleBand" style="display:none;margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none">
-        <div class="cycle-band-header" onclick="this.parentElement.classList.toggle('open')">
-          <span>🔮</span><span>Bekle mi Sat mı? — Döngü Analizi</span>
-          <span style="margin-left:auto;color:var(--muted);font-size:.75rem">▼</span>
-        </div>
-        <div class="cycle-band-body" id="cycleBandBody"></div>
-      </div>
-      <div class="analysis-footer">
-        <div class="motiv-msg" id="motivationBanner"></div>
-        <button class="btn btn-teal btn-sm" onclick="saveTransaction()" id="saveBtn" disabled>
-          💾 Kaydet
-        </button>
-      </div>
-    </div>
-
-    <!-- İşlem geçmişi -->
-    <div class="card" id="txCard">
-      <div class="card-header" onclick="toggleCard('txCard')">
-        <div class="card-title">📋 İşlem Geçmişi</div>
-        <span class="card-arrow">▼</span>
-      </div>
-      <div class="card-body" style="padding:0 0 12px">
-        <div class="table-wrap" style="margin:0 -1px">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th><th>Tarih</th><th>Fiyat</th><th>K/Z</th>
-                <th>Tür</th><th>Tutar</th><th></th>
-              </tr>
-            </thead>
-            <tbody id="txTableBody">
-              <tr><td colspan="7"><div class="empty-state">
-                <div class="empty-icon">₿</div>
-                <div class="empty-title">Henüz işlem yok</div>
-                <div class="empty-desc">Fiyat gir → Analiz Et → Kaydet</div>
-              </div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
   </div><!-- /page-home -->
 
   <!-- ══ PAGE: GRAFİKLER ══ -->
@@ -1265,6 +1181,87 @@ tbody tr:active{background:var(--card2);}
 
   </div><!-- /page-settings -->
 
+  <!-- ══ PAGE: ANALİZ ══ -->
+  <div class="page" id="page-analyze">
+    
+    <!-- FİYAT ANALİZİ -->
+    <div class="card always-open">
+      <div class="card-header" style="cursor:default">
+        <div class="card-title">🔍 Fiyat Analizi & 10-Faktör Skor</div>
+      </div>
+      <div class="card-body">
+        <div class="row" style="margin-bottom:10px">
+          <div class="col">
+            <label class="input-label">Bitcoin Fiyatı (₺)</label>
+            <input class="input-field" id="priceInput" type="text" placeholder="örn: 3.500.000"
+              oninput="formatPrice(this)" onkeydown="if(event.key==='Enter') analyzePrice()">
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" id="liveBtn" onclick="fillPriceInputFromLive()">
+            <span id="liveBtnIcon">📡</span> Canlı
+          </button>
+          <button class="btn btn-gold" onclick="analyzePrice()" style="flex:1;justify-content:center">
+            🔍 Analiz Et
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALIZ SONUÇLARI -->
+    <div id="analyzeResults" style="display:none">
+      <!-- 10-Faktör Detaylı Tablo -->
+      <div class="card always-open">
+        <div class="card-header" style="cursor:default">
+          <div class="card-title">📊 10-Faktör Skor Detayı</div>
+        </div>
+        <div class="card-body" id="scoreDetailsBody">
+          <!-- Dinamik içerik -->
+        </div>
+      </div>
+
+      <!-- Alım/Satış Analizi -->
+      <div class="card always-open">
+        <div class="card-header" style="cursor:default">
+          <span class="a-icon" id="analysisIcon" style="font-size:1.3rem;margin-right:8px">⚡</span>
+          <div class="card-title" id="analysisTitle" style="display:inline">—</div>
+        </div>
+        <div class="card-body">
+          <!-- Mod durumu bandı -->
+          <div id="modeBand" style="display:none;padding:8px 0;font-size:.76rem;font-weight:600;align-items:center;gap:7px;margin-bottom:8px"></div>
+          <div id="analysisDesc" style="font-size:.85rem;line-height:1.6;margin-bottom:10px"></div>
+          <div class="metrics-grid" id="analysisGrid"></div>
+          <!-- Satış detayı (yarı/yarı modunda) -->
+          <div id="sellDetailBand" style="display:none;margin-top:10px"></div>
+          <!-- Döngü analizi -->
+          <div class="cycle-band" id="cycleBand" style="display:none;margin-top:10px">
+            <div class="cycle-band-header" onclick="this.parentElement.classList.toggle('open')">
+              <span>🔮</span><span>Bekle mi Sat mı? — Döngü Analizi</span>
+              <span style="margin-left:auto;color:var(--muted);font-size:.75rem">▼</span>
+            </div>
+            <div class="cycle-band-body" id="cycleBandBody"></div>
+          </div>
+          <div id="motivationBanner" style="margin-top:10px;padding:10px;background:rgba(0,240,160,.1);border-left:3px solid var(--teal);border-radius:6px;font-size:.8rem;color:var(--text)"></div>
+          <button class="btn btn-teal btn-sm" style="width:100%;justify-content:center;margin-top:10px" onclick="saveTransaction()" id="saveBtn" disabled>
+            💾 Kaydet
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kaydedilen İşlem Geçmişi (her zaman görünür) -->
+    <div class="card" id="txCard">
+      <div class="card-header" onclick="toggleCard('txCard')">
+        <div class="card-title">📋 İşlem Geçmişi</div>
+        <span class="card-arrow">▼</span>
+      </div>
+      <div class="card-body" style="padding:0 0 12px">
+        <div id="txList"></div>
+      </div>
+    </div>
+
+  </div><!-- /page-analyze -->
+
 </div><!-- /pages -->
 
 <!-- BOTTOM NAV -->
@@ -1272,6 +1269,10 @@ tbody tr:active{background:var(--card2);}
   <button class="nav-item active" onclick="switchPage('home',this)">
     <span class="nav-icon">🏠</span>
     <span class="nav-label">Ana Sayfa</span>
+  </button>
+  <button class="nav-item" onclick="switchPage('analyze',this)">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Analiz</span>
   </button>
   <button class="nav-item" onclick="switchPage('charts',this)">
     <span class="nav-icon">📈</span>
@@ -1541,6 +1542,7 @@ function switchPage(name, btn) {
   if (name==='charts') { renderCharts(computeState(getTxs())); renderAdvStats(); loadBtcLiveChart(btcCurrentPeriod); }
   if (name==='tools') { fetchFearGreed(); renderKova(); }
   if (name==='settings') { loadNotifSettings(); }
+  if (name==='analyze') { renderTxList(); }
 }
 
 function toggleCard(id) {
@@ -1566,7 +1568,7 @@ function resetAll() {
   autoSaveToDrive();
   lastAnalysis = null;
   document.getElementById('saveBtn').disabled = true;
-  document.getElementById('analysisBox').classList.remove('visible');
+  document.getElementById('analyzeResults').style.display = 'none';
   showToast('♻️ Tüm veriler sıfırlandı.','warning');
 }
 
@@ -1714,34 +1716,38 @@ function computeState(txList) {
 ═══════════════════════════════════════ */
 function compute10FactorScore(transactions, state, currentPrice, change24h, fg, range30) {
   var scores = {};
+  var raw = {}; // Gerçek/ham değerler (kullanıcıya gösterim için)
   
-  // HTML'de F&G ve change24h yok — sonradan eklenecek, şimdilik placeholder
-  var actualFg = fg > 0 ? fg : 50;
+  // 1️⃣ FEAR & GREED — gerçek değeri sayfadan oku (Araçlar sekmesinde zaten çekiliyor)
+  var fgEl = document.getElementById('fgValue');
+  var realFg = fg > 0 ? fg : (fgEl && !isNaN(parseInt(fgEl.textContent)) ? parseInt(fgEl.textContent) : 50);
+  raw.fg = realFg;
+  scores.fg = realFg;
   
-  // 1️⃣ FEAR & GREED — placeholder
-  scores.fg = actualFg;
-  
-  // 2️⃣ VOLATİLİTE — canlı fiyat range'i ile hesapla (5dk'da güncellenir)
-  var volatility = 0;
+  // 2️⃣ VOLATİLİTE — canlı fiyatın ort. maliyetten yüzde sapması (gerçek volatilite vekili)
+  var volatilityPct = 0;
   if (livePrice && state.avgCost) {
-    // Tahmini volatility: canlı fiyat ort. maliyete göre
-    volatility = Math.abs((livePrice - state.avgCost) / state.avgCost) * 100;
-    scores.volatility = Math.max(20, 80 - volatility * 12);
+    volatilityPct = Math.abs((livePrice - state.avgCost) / state.avgCost) * 100;
+    scores.volatility = Math.max(20, 80 - volatilityPct * 12);
   } else {
     scores.volatility = 50;
   }
+  raw.volatility = volatilityPct;
   
   // 3️⃣ GERÇEKLEŞMEMIŞ K/Z %
   var unrealizedPct = state.avgCost ? ((currentPrice - state.avgCost) / state.avgCost) * 100 : 0;
+  raw.unrealizedPct = unrealizedPct;
   scores.unrealizedPct = Math.max(10, Math.min(90, 50 - unrealizedPct));
   
   // 4️⃣ PORTFOLIO BÜYÜKLÜĞÜ
+  raw.portfolio = state.totalInvested;
   var portfolioScore = state.totalInvested <= 100000 ? 70 : 
                        state.totalInvested >= 1000000 ? 30 : 
                        70 - ((state.totalInvested - 100000) / 900000) * 40;
   scores.portfolio = Math.max(30, Math.min(70, portfolioScore));
   
   // 5️⃣ ÇEKİLMİŞ KÂR
+  raw.withdrawnProfit = state.totalWithdrawn;
   scores.withdrawnProfit = Math.min(80, 50 + (state.totalWithdrawn / 500000) * 30);
   
   // 6️⃣ ARD ARDA ZARAR
@@ -1755,6 +1761,7 @@ function compute10FactorScore(transactions, state, currentPrice, change24h, fg, 
       else break;
     }
   }
+  raw.consecutiveLoss = consecutiveLoss;
   scores.consecutiveLoss = consecutiveLoss === 0 ? 60 : 
                            consecutiveLoss <= 2 ? 70 : 
                            consecutiveLoss <= 3 ? 50 : 30;
@@ -1762,20 +1769,25 @@ function compute10FactorScore(transactions, state, currentPrice, change24h, fg, 
   // 7️⃣ SON İŞLEM GÜNÜ
   var lastTxTime = transactions.length > 0 ? new Date(transactions[transactions.length-1].id) : null;
   var daysSinceLastTx = lastTxTime ? Math.floor((Date.now() - lastTxTime) / (1000*60*60*24)) : 999;
+  raw.lastTxDays = daysSinceLastTx;
   scores.lastTxDays = daysSinceLastTx > 30 ? 80 : 50 + (daysSinceLastTx / 30) * 30;
   
-  // 8️⃣ ATH'YA UZAKLIK — placeholder (65000 USD ATH)
-  var btcAthUsd = 65000;
-  var athDistPct = ((btcAthUsd - (currentPrice / 30)) / btcAthUsd) * 100;
+  // 8️⃣ ATH'YA UZAKLIK (TRY bazında yaklaşık ATH ~3.9M TL, 65000 USD × ~33 kur referansı)
+  var btcAthTry = 3900000;
+  var athDistPct = ((btcAthTry - currentPrice) / btcAthTry) * 100;
+  raw.athDistance = athDistPct;
   scores.athDistance = athDistPct < 5 ? 20 : Math.min(60, 50 + (athDistPct / 30) * 10);
   
   // 9️⃣ HALVING DÖNGÜSÜ
   var lastHalving = new Date(2024, 10, 15);
   var daysSinceHalving = Math.floor((Date.now() - lastHalving) / (1000*60*60*24));
+  raw.halving = daysSinceHalving;
   scores.halving = daysSinceHalving < 180 ? 40 : 60;
   
   // 🔟 HAFTANIN GÜNÜ
+  var dayNames = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
   var dayOfWeek = new Date().getDay();
+  raw.dayOfWeek = dayNames[dayOfWeek];
   scores.dayOfWeek = dayOfWeek === 0 || dayOfWeek === 1 ? 70 : 40;
   
   // ── AĞIRLIKLANDIRMA ──
@@ -1814,10 +1826,11 @@ function compute10FactorScore(transactions, state, currentPrice, change24h, fg, 
   return {
     totalScore: Math.round(totalScore),
     factors: scores,
+    raw: raw,
     weights: weights,
     marketRegime: scores.fg >= 70 ? 'BOĞA' : scores.fg <= 30 ? 'AYI' : 'DENGELİ',
-    buyThreshold: (100 - totalScore / 2) * 0.01,
-    profitTarget: (100 + totalScore / 4) * 0.01
+    buyThreshold: 0.35 - (totalScore / 100) * 0.30,   // Skor 0→%35 düşüş gerekir, Skor 100→%5 düşüş yeterli
+    profitTarget: 0.10 + (totalScore / 100) * 0.25    // Skor 0→%10 kârda sat, Skor 100→%35 kâra kadar bekle
   };
 }
 
@@ -1890,6 +1903,52 @@ function getModeInfo(txs) {
   return { mode, consecutiveSmallLoss, isConsecutiveSell, buysSinceLastSell };
 }
 
+function renderTxList() {
+  var txs = getTxs();
+  var state = computeState(txs);
+  var html = '';
+  if (txs.length === 0) {
+    html = `<div style="text-align:center;padding:20px;color:var(--muted)">
+      <div style="font-size:2rem;margin-bottom:8px">₿</div>
+      <div style="font-weight:700">Henüz işlem yok</div>
+      <div style="font-size:.8rem">Fiyat gir → Analiz Et → Kaydet</div>
+    </div>`;
+  } else {
+    html = `<div style="overflow-x:auto">
+      <table style="width:100%;font-size:.8rem;border-collapse:collapse">
+        <thead>
+          <tr style="background:rgba(0,240,160,.08);border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:8px;font-weight:700">#</th>
+            <th style="text-align:left;padding:8px;font-weight:700">Tarih</th>
+            <th style="text-align:right;padding:8px;font-weight:700">Fiyat</th>
+            <th style="text-align:right;padding:8px;font-weight:700">K/Z</th>
+            <th style="text-align:center;padding:8px;font-weight:700">Tür</th>
+            <th style="text-align:right;padding:8px;font-weight:700">Tutar</th>
+            <th style="text-align:center;padding:8px;font-weight:700"></th>
+          </tr>
+        </thead>
+        <tbody>`;
+    txs.forEach((tx, i) => {
+      var dateStr = tx.date ? tx.date.split(' ')[0] : '-';
+      var pct = tx.pct || 0;
+      var pctColor = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--text)';
+      var typeColor = tx.type === 'SELL' ? 'var(--green)' : tx.type === 'BUY' ? 'var(--gold)' : 'var(--blue)';
+      var typeLabel = tx.type === 'SELL' ? '💰 Satış' : tx.type === 'BUY' ? '🛒 Alım' : '⚡ İlk';
+      html += `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px;text-align:left;color:var(--muted)">${i+1}</td>
+        <td style="padding:8px;text-align:left;color:var(--text)">${dateStr}</td>
+        <td style="padding:8px;text-align:right;font-family:'JetBrains Mono';color:var(--gold)">₺${Math.round(tx.price).toLocaleString('tr-TR')}</td>
+        <td style="padding:8px;text-align:right;color:${pctColor};font-weight:600">${pct > 0 ? '+' : ''}${pct.toFixed(1)}%</td>
+        <td style="padding:8px;text-align:center;color:${typeColor};font-weight:700">${typeLabel}</td>
+        <td style="padding:8px;text-align:right;font-family:'JetBrains Mono';color:var(--blue)">₺${Math.round(tx.amount).toLocaleString('tr-TR')}</td>
+        <td style="padding:8px;text-align:center"><button class="btn-delete" onclick="askDelete(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.85rem">🗑️</button></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+  document.getElementById('txList').innerHTML = html;
+}
+
 function analyzePrice() {
   var price=parsePrice(document.getElementById('priceInput').value);
   if(!price||price<=0){showToast('Geçerli bir fiyat gir!','error');return;}
@@ -1944,8 +2003,7 @@ function analyzePrice() {
   var btcSold=sellAmount>0?sellAmount/price:0;
   lastAnalysis={price,action,buyAmount,sellAmount,realizeAmount,anaparaAmount,pct,btcBought,btcSold,sellMode};
 
-  var box=document.getElementById('analysisBox');
-  box.classList.add('visible');
+  document.getElementById('analyzeResults').style.display = 'block';
   var icon=document.getElementById('analysisIcon');
   var title=document.getElementById('analysisTitle');
   var desc=document.getElementById('analysisDesc');
@@ -2000,8 +2058,11 @@ function analyzePrice() {
     icon.className='a-icon buy'; icon.textContent='🛒';
     title.textContent=action==='BUY_INIT'?'🚀 İlk Alım!':'Alım Yap!';
     title.style.color='var(--gold)';
-    desc.textContent=action==='BUY_INIT'?'İlk yatırım: '+fmtCur(buyAmount)+'!'
-      :'Zarar -%'+fmt(Math.abs(pct),2)+' → alım yap.';
+    var tierLabel = action==='BUY_INIT' ? 'İlk Alım' : (buyAmount===buySteps.s1 ? 'Kademe 1 (hafif düşüş)' : buyAmount===buySteps.s2 ? 'Kademe 2 (orta düşüş)' : 'Kademe 3 (derin düşüş)');
+    desc.innerHTML = (action==='BUY_INIT'
+      ? 'İlk yatırım: '+fmtCur(buyAmount)+'!'
+      : 'Zarar -%'+fmt(Math.abs(pct),2)+' → alım yap.')
+      + `<br><span style="font-size:.72rem;color:var(--muted)">💡 ${tierLabel} → Ayarlar'da belirlediğin tutar: <strong style="color:var(--gold)">${fmtCur(buyAmount,0)}</strong></span>`;
 
     // Alımda da durumu göster
     if(txs.length>0){
@@ -2039,24 +2100,108 @@ function analyzePrice() {
   ];
   grid.innerHTML=metrics.map(m=>`<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-val" style="color:${m.color}">${m.val}</div></div>`).join('');
   
-  // 🔥 10 FAKTÖRLÜ SKOR BANDI
-  var scoreBand = document.getElementById('scoreBand') || 
-                  (function() { var el = document.createElement('div'); el.id='scoreBand'; grid.parentNode.insertBefore(el, grid.nextSibling); return el; })();
-  var scoreColor = overallScore > 70 ? 'var(--green)' : overallScore > 40 ? 'var(--gold)' : 'var(--red)';
-  scoreBand.innerHTML = `
-    <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:.75rem;border-left:3px solid ${scoreColor}">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span style="font-weight:700;color:${scoreColor}">📊 10-Faktör Skor: ${overallScore}/100</span>
-        <span style="color:var(--muted);font-size:.65rem">${marketRegime}</span>
-      </div>
-      <div style="color:var(--muted);line-height:1.4">
-        Alım Eşiği: <strong style="color:var(--green)">-${(dynamicBuyThreshold*100).toFixed(1)}%</strong> | 
-        Kâr Hedefi: <strong style="color:var(--teal)">+${(dynamicProfitTarget*100).toFixed(1)}%</strong>
+  // 10 FAKTÖRLÜ SKOR TABLOSU (Analiz sekmesinde göster)
+  var raw = tenFactorScore.raw;
+  var buyThresholdPrice = state.avgCost ? state.avgCost * (1 - dynamicBuyThreshold) : 0;
+  var profitTargetPrice = state.avgCost ? state.avgCost * (1 + dynamicProfitTarget) : 0;
+  var scoreDetailsHtml = `
+    <div style="overflow-x:auto;margin-bottom:10px">
+      <table style="width:100%;font-size:.72rem;border-collapse:collapse">
+        <thead>
+          <tr style="background:rgba(0,240,160,.08);border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:7px 6px;font-weight:700;color:var(--teal)">Faktör</th>
+            <th style="text-align:center;padding:7px 6px;font-weight:700;color:var(--text)">Gerçek Değer</th>
+            <th style="text-align:center;padding:7px 6px;font-weight:700;color:var(--gold)">Skor</th>
+            <th style="text-align:center;padding:7px 6px;font-weight:700;color:var(--blue)">Ağırlık</th>
+            <th style="text-align:left;padding:7px 6px;font-weight:700;color:var(--dim)">Yorum</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">🌡️ Fear & Greed</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">${raw.fg}/100</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.fg)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.fg*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">${tenFactorScore.factors.fg >= 70 ? 'Boğa' : tenFactorScore.factors.fg <= 30 ? 'Ayı' : 'Dengeli'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">📈 Volatilite</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">%${raw.volatility.toFixed(1)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.volatility)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.volatility*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">${tenFactorScore.factors.volatility > 60 ? 'Düşük vol' : 'Yüksek vol'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">💰 Gerçekleşmemiş K/Z</td>
+            <td style="text-align:center;padding:7px 6px;color:${raw.unrealizedPct>=0?'var(--green)':'var(--red)'};font-weight:600">${raw.unrealizedPct>=0?'+':''}%${raw.unrealizedPct.toFixed(2)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.unrealizedPct)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.unrealizedPct*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">${raw.unrealizedPct<0 ? 'Zarardayız' : 'Kârda'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">📊 Portfolio Boyutu</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">${fmtCur(raw.portfolio,0)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.portfolio)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.portfolio*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">${state.totalInvested > 500000 ? 'Konservatif' : 'Agresif'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">🎁 Çekilmiş Kâr</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">${fmtCur(raw.withdrawnProfit,0)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.withdrawnProfit)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.withdrawnProfit*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">${state.totalWithdrawn > 100000 ? 'Güvence var' : 'Henüz az'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">⚠️ Ard Arda Zarar</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">${raw.consecutiveLoss}x</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.consecutiveLoss)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.consecutiveLoss*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">Risk kontrol</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">📅 Son İşlem</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">${raw.lastTxDays} gün önce</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.lastTxDays)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.lastTxDays*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">Ritim kurma</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">📈 ATH'ya Uzaklık</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">%${raw.athDistance.toFixed(1)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.athDistance)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.athDistance*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">Tepede mi?</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 6px">🔄 Halving Döngüsü</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">${raw.halving} gün</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.halving)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.halving*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">Döngü aşaması</td>
+          </tr>
+          <tr>
+            <td style="padding:7px 6px">📆 Haftanın Günü</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--text);font-weight:600">${raw.dayOfWeek}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--gold)">${Math.round(tenFactorScore.factors.dayOfWeek)}</td>
+            <td style="text-align:center;padding:7px 6px;color:var(--blue)">${(tenFactorScore.weights.dayOfWeek*100).toFixed(0)}%</td>
+            <td style="padding:7px 6px;font-size:.68rem;color:var(--muted)">Hafta başı/sonu</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="background:rgba(247,147,26,.1);border-left:3px solid var(--gold);padding:10px 12px;border-radius:6px;margin-top:10px">
+      <div style="font-weight:700;color:var(--gold);margin-bottom:6px">📊 TOPLAM SKOR: ${overallScore}/100</div>
+      <div style="font-size:.78rem;color:var(--text);line-height:1.7">
+        <strong>Piyasa Rejimi:</strong> ${marketRegime}<br>
+        <strong>Alım Eşiği:</strong> -${(dynamicBuyThreshold*100).toFixed(1)}% ${state.avgCost ? `→ <span style="color:var(--green);font-family:'JetBrains Mono'">${fmtCur(buyThresholdPrice,0)}</span> altına düşerse` : '(henüz ort. maliyet yok)'}<br>
+        <strong>Kâr Hedefi:</strong> +${(dynamicProfitTarget*100).toFixed(1)}% ${state.avgCost ? `→ <span style="color:var(--teal);font-family:'JetBrains Mono'">${fmtCur(profitTargetPrice,0)}</span> üzerine çıkarsa` : '(henüz ort. maliyet yok)'}
       </div>
     </div>
   `;
   
-  var pool=MOTIVATIONS[motivKey];
+  document.getElementById('scoreDetailsBody').innerHTML = scoreDetailsHtml;
+  document.getElementById('analyzeResults').style.display = 'block';
   motiv.textContent=pool[Math.floor(Math.random()*pool.length)];
   document.getElementById('saveBtn').disabled=false;
   updateCards(state,price);
@@ -2071,14 +2216,23 @@ function analyzePrice() {
     document.getElementById('cycleBand').style.display='none';
   }
 
-  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('analyzeResults').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 /* ═══════════════════════════════════════
    SAVE TRANSACTION
 ═══════════════════════════════════════ */
 function saveTransaction() {
-  if(!lastAnalysis) return;
+  if(!lastAnalysis) { showToast('Önce Analiz Et butonuna bas!','error'); return; }
+  try {
+    _saveTransactionInner();
+  } catch(err) {
+    showToast('❌ Kaydetme hatası: ' + err.message, 'error');
+    console.error('saveTransaction hatası:', err);
+  }
+}
+
+function _saveTransactionInner() {
   var {price,action,buyAmount,sellAmount,realizeAmount,anaparaAmount,pct,btcBought,btcSold,sellMode}=lastAnalysis;
   var isHalf = sellMode==='HALF' && action==='SELL';
 
@@ -2163,7 +2317,7 @@ function renderAll() {
   var state=computeState(txs);
   var lastPrice=txs.length?txs[txs.length-1].price:0;
   updateCards(state,lastPrice);
-  renderTable();
+  renderTxList();
   updateLevel();
   updateGoalBar();
   updateBadges();
@@ -2202,32 +2356,6 @@ function updateCards(state,currentPrice) {
     <div class="sim-row"><span>Toplam Yatırım</span><strong class="text-gold">${fmtCur(state.totalInvested)}</strong></div>
     <div class="sim-row"><span>Çekilen Kâr</span><strong class="text-green">${fmtCur(state.totalWithdrawn,0)}</strong></div>
   `;
-}
-
-/* ═══════════════════════════════════════
-   TABLE
-═══════════════════════════════════════ */
-function renderTable() {
-  var txs=getTxs();
-  var tbody=document.getElementById('txTableBody');
-  if(!txs.length){
-    tbody.innerHTML=`<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">₿</div><div class="empty-title">Henüz işlem yok</div><div class="empty-desc">Fiyat gir → Analiz Et → Kaydet</div></div></td></tr>`;
-    return;
-  }
-  tbody.innerHTML=txs.map((tx,i)=>{
-    var pctCell=tx.type==='INIT'?'<span class="badge-tx badge-init">İlk</span>':tx.pct>=0?`<span class="text-green">+${fmt(tx.pct,2)}%</span>`:`<span class="text-red">${fmt(tx.pct,2)}%</span>`;
-    var badge=tx.type==='SELL'?'<span class="badge-tx badge-sell">💰 Satış</span>':tx.type==='INIT'?'<span class="badge-tx badge-init">🚀 İlk</span>':'<span class="badge-tx badge-buy">🛒 Alım</span>';
-    var tutar=tx.type==='SELL'?`<span class="text-green">${fmtCur(tx.amount,0)}</span>`:`<span class="text-gold">${fmtCur(tx.amount,0)}</span>`;
-    return `<tr>
-      <td class="text-muted">${i+1}</td>
-      <td style="font-size:.7rem;white-space:nowrap">${tx.date.split(' ')[0]}</td>
-      <td class="mono text-gold">${fmtCur(tx.price,0)}</td>
-      <td>${pctCell}</td>
-      <td>${badge}</td>
-      <td>${tutar}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="askDelete(${i})" style="padding:4px 8px;font-size:.7rem">✕</button></td>
-    </tr>`;
-  }).join('');
 }
 
 /* ═══════════════════════════════════════
