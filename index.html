@@ -1992,11 +1992,11 @@ function analyzePrice() {
       motivKey='sell';
     } else {
       action='BUY';
-      // Dinamik alım eşikleri
-      var buyThresholdPct = dynamicBuyThreshold * 100; // örn. -15%
-      if(pct >= buyThresholdPct * 0.5) buyAmount=buySteps.s1;              // En hafif düşüş
-      else if(pct >= buyThresholdPct) buyAmount=buySteps.s2;               // Orta düşüş
-      else buyAmount=buySteps.s3;                                          // Derin düşüş
+      // Dinamik alım eşikleri (pct negatif olduğu için eşikleri de negatif yapıyoruz!)
+      var buyThresholdPct = dynamicBuyThreshold * 100; // örn. 20 (yüzde, pozitif)
+      if(pct >= -buyThresholdPct * 0.5) buyAmount=buySteps.s1;              // 0% → eşiğin yarısı (hafif düşüş)
+      else if(pct >= -buyThresholdPct) buyAmount=buySteps.s2;               // Eşiğin yarısı → tam eşik (orta düşüş)
+      else buyAmount=buySteps.s3;                                          // Eşiği geçti (derin düşüş)
     }
   }
   var btcBought=buyAmount>0?buyAmount/price:0;
@@ -2775,6 +2775,7 @@ function saveGoal(){
   if(!btc){showToast('Geçerli BTC gir!','error');return;}
   userGoal={name:name||btc+' BTC',btc};
   localStorage.setItem('btc_goal',JSON.stringify(userGoal));
+  autoSaveToDrive();
   closeModal('goalModal'); updateGoalBar();
   showToast('🎯 Hedef kaydedildi!','success');
 }
@@ -2842,6 +2843,7 @@ function selectCalDay(d) {
 function saveInvestDay(){
   if(!investDays.length){ showToast('En az bir gün seç!','error'); return; }
   localStorage.setItem('btc_invest_days', JSON.stringify(investDays));
+  autoSaveToDrive();
   closeModal('investDayModal'); updateCountdown();
   var sorted = [...investDays].sort((a,b)=>a-b);
   showToast('📅 Yatırım günleri kaydedildi: '+sorted.join(', '),'success');
@@ -3035,6 +3037,7 @@ function saveSteps(){
   buySteps.s3=parseInt(document.getElementById('step3').value)||40000;
   buySteps.init=parseInt(document.getElementById('stepInit').value)||20000;
   localStorage.setItem('btc_steps',JSON.stringify(buySteps));
+  autoSaveToDrive();
   updateStepsPreview();
   showToast('⚙️ Alım adımları güncellendi!','success');
 }
