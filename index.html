@@ -1710,6 +1710,118 @@ function computeState(txList) {
    ANALYZE
 ═══════════════════════════════════════ */
 /* ═══════════════════════════════════════
+   10 FAKTÖRLÜ DİNAMİK SKOR (HTML versiyonu)
+═══════════════════════════════════════ */
+function compute10FactorScore(transactions, state, currentPrice, change24h, fg, range30) {
+  var scores = {};
+  
+  // HTML'de F&G ve change24h yok — sonradan eklenecek, şimdilik placeholder
+  var actualFg = fg > 0 ? fg : 50;
+  
+  // 1️⃣ FEAR & GREED — placeholder
+  scores.fg = actualFg;
+  
+  // 2️⃣ VOLATİLİTE — canlı fiyat range'i ile hesapla (5dk'da güncellenir)
+  var volatility = 0;
+  if (livePrice && state.avgCost) {
+    // Tahmini volatility: canlı fiyat ort. maliyete göre
+    volatility = Math.abs((livePrice - state.avgCost) / state.avgCost) * 100;
+    scores.volatility = Math.max(20, 80 - volatility * 12);
+  } else {
+    scores.volatility = 50;
+  }
+  
+  // 3️⃣ GERÇEKLEŞMEMIŞ K/Z %
+  var unrealizedPct = state.avgCost ? ((currentPrice - state.avgCost) / state.avgCost) * 100 : 0;
+  scores.unrealizedPct = Math.max(10, Math.min(90, 50 - unrealizedPct));
+  
+  // 4️⃣ PORTFOLIO BÜYÜKLÜĞÜ
+  var portfolioScore = state.totalInvested <= 100000 ? 70 : 
+                       state.totalInvested >= 1000000 ? 30 : 
+                       70 - ((state.totalInvested - 100000) / 900000) * 40;
+  scores.portfolio = Math.max(30, Math.min(70, portfolioScore));
+  
+  // 5️⃣ ÇEKİLMİŞ KÂR
+  scores.withdrawnProfit = Math.min(80, 50 + (state.totalWithdrawn / 500000) * 30);
+  
+  // 6️⃣ ARD ARDA ZARAR
+  var consecutiveLoss = 0;
+  for (var i = transactions.length - 1; i >= 0; i--) {
+    var tx = transactions[i];
+    if (tx.type === 'SELL') break;
+    if (tx.type === 'BUY' || tx.type === 'INIT') {
+      var pct = tx.pct || 0;
+      if (pct < 0) consecutiveLoss++;
+      else break;
+    }
+  }
+  scores.consecutiveLoss = consecutiveLoss === 0 ? 60 : 
+                           consecutiveLoss <= 2 ? 70 : 
+                           consecutiveLoss <= 3 ? 50 : 30;
+  
+  // 7️⃣ SON İŞLEM GÜNÜ
+  var lastTxTime = transactions.length > 0 ? new Date(transactions[transactions.length-1].id) : null;
+  var daysSinceLastTx = lastTxTime ? Math.floor((Date.now() - lastTxTime) / (1000*60*60*24)) : 999;
+  scores.lastTxDays = daysSinceLastTx > 30 ? 80 : 50 + (daysSinceLastTx / 30) * 30;
+  
+  // 8️⃣ ATH'YA UZAKLIK — placeholder (65000 USD ATH)
+  var btcAthUsd = 65000;
+  var athDistPct = ((btcAthUsd - (currentPrice / 30)) / btcAthUsd) * 100;
+  scores.athDistance = athDistPct < 5 ? 20 : Math.min(60, 50 + (athDistPct / 30) * 10);
+  
+  // 9️⃣ HALVING DÖNGÜSÜ
+  var lastHalving = new Date(2024, 10, 15);
+  var daysSinceHalving = Math.floor((Date.now() - lastHalving) / (1000*60*60*24));
+  scores.halving = daysSinceHalving < 180 ? 40 : 60;
+  
+  // 🔟 HAFTANIN GÜNÜ
+  var dayOfWeek = new Date().getDay();
+  scores.dayOfWeek = dayOfWeek === 0 || dayOfWeek === 1 ? 70 : 40;
+  
+  // ── AĞIRLIKLANDIRMA ──
+  var weights;
+  if (scores.fg >= 70) {
+    weights = {
+      fg: 0.30, volatility: 0.25, unrealizedPct: 0.15, portfolio: 0.10,
+      withdrawnProfit: 0.08, consecutiveLoss: 0.05, lastTxDays: 0.04,
+      athDistance: 0.02, halving: 0.005, dayOfWeek: 0.005
+    };
+  } else if (scores.fg <= 30) {
+    weights = {
+      fg: 0.40, volatility: 0.20, unrealizedPct: 0.12, portfolio: 0.08,
+      withdrawnProfit: 0.05, consecutiveLoss: 0.10, lastTxDays: 0.03,
+      athDistance: 0.01, halving: 0.005, dayOfWeek: 0.005
+    };
+  } else {
+    weights = {
+      fg: 0.25, volatility: 0.20, unrealizedPct: 0.15, portfolio: 0.10,
+      withdrawnProfit: 0.10, consecutiveLoss: 0.10, lastTxDays: 0.05,
+      athDistance: 0.03, halving: 0.01, dayOfWeek: 0.01
+    };
+  }
+  
+  var totalScore = (scores.fg * weights.fg) +
+                   (scores.volatility * weights.volatility) +
+                   (scores.unrealizedPct * weights.unrealizedPct) +
+                   (scores.portfolio * weights.portfolio) +
+                   (scores.withdrawnProfit * weights.withdrawnProfit) +
+                   (scores.consecutiveLoss * weights.consecutiveLoss) +
+                   (scores.lastTxDays * weights.lastTxDays) +
+                   (scores.athDistance * weights.athDistance) +
+                   (scores.halving * weights.halving) +
+                   (scores.dayOfWeek * weights.dayOfWeek);
+  
+  return {
+    totalScore: Math.round(totalScore),
+    factors: scores,
+    weights: weights,
+    marketRegime: scores.fg >= 70 ? 'BOĞA' : scores.fg <= 30 ? 'AYI' : 'DENGELİ',
+    buyThreshold: (100 - totalScore / 2) * 0.01,
+    profitTarget: (100 + totalScore / 4) * 0.01
+  };
+}
+
+/* ═══════════════════════════════════════
    MEKANİZMA TESPİTİ
 ═══════════════════════════════════════ */
 function detectSellMode(txs) {
@@ -1786,11 +1898,25 @@ function analyzePrice() {
   var action,buyAmount=0,sellAmount=0,realizeAmount=0,anaparaAmount=0,pct=0,motivKey='buy';
   var sellMode='FULL';
 
+  // 🔥 10 FAKTÖRLÜ DİNAMİK SKOR HESAPLA (canlı fiyat kullanarak)
+  var tenFactorScore = compute10FactorScore(
+    txs, 
+    state, 
+    livePrice || price,  // Tercih: cache'deki canlı fiyat, yoksa şu an girilen fiyat
+    0, // change24h (HTML'de hesaplanmıyor)
+    0  // F&G (HTML'de hesaplanmıyor, sadece Script'te)
+  );
+  var overallScore = tenFactorScore.totalScore;
+  var dynamicBuyThreshold = tenFactorScore.buyThreshold;   // % düşüş: 0.01-0.50
+  var dynamicProfitTarget = tenFactorScore.profitTarget;   // % kâr: 0.01-0.50
+  var marketRegime = tenFactorScore.marketRegime;
+  
+  // Dinamik alım kararı: statik %10/%25/%50 yerine dinamik eşik kullan
   if(state.totalBtc===0){
     action='BUY_INIT'; buyAmount=buySteps.init; pct=0;
   } else {
     pct=((price-state.avgCost)/state.avgCost)*100;
-    if(pct>0){
+    if(pct>dynamicProfitTarget*100){ // Dinamik kâr hedefine ulaştı mı?
       action='SELL';
       var profitFraction=(price-state.avgCost)/price;
       var totalSellVal=state.totalBtc*profitFraction*price; // toplam kâr TL
@@ -1807,9 +1933,11 @@ function analyzePrice() {
       motivKey='sell';
     } else {
       action='BUY';
-      if(pct>=-10) buyAmount=buySteps.s1;
-      else if(pct>=-25) buyAmount=buySteps.s2;
-      else buyAmount=buySteps.s3;
+      // Dinamik alım eşikleri
+      var buyThresholdPct = dynamicBuyThreshold * 100; // örn. -15%
+      if(pct >= buyThresholdPct * 0.5) buyAmount=buySteps.s1;              // En hafif düşüş
+      else if(pct >= buyThresholdPct) buyAmount=buySteps.s2;               // Orta düşüş
+      else buyAmount=buySteps.s3;                                          // Derin düşüş
     }
   }
   var btcBought=buyAmount>0?buyAmount/price:0;
@@ -1910,6 +2038,24 @@ function analyzePrice() {
     {label:'Yeni Ort.',val:fmtCur(newAvg,0),color:'var(--blue)'},
   ];
   grid.innerHTML=metrics.map(m=>`<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-val" style="color:${m.color}">${m.val}</div></div>`).join('');
+  
+  // 🔥 10 FAKTÖRLÜ SKOR BANDI
+  var scoreBand = document.getElementById('scoreBand') || 
+                  (function() { var el = document.createElement('div'); el.id='scoreBand'; grid.parentNode.insertBefore(el, grid.nextSibling); return el; })();
+  var scoreColor = overallScore > 70 ? 'var(--green)' : overallScore > 40 ? 'var(--gold)' : 'var(--red)';
+  scoreBand.innerHTML = `
+    <div style="background:rgba(0,0,0,.2);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:.75rem;border-left:3px solid ${scoreColor}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-weight:700;color:${scoreColor}">📊 10-Faktör Skor: ${overallScore}/100</span>
+        <span style="color:var(--muted);font-size:.65rem">${marketRegime}</span>
+      </div>
+      <div style="color:var(--muted);line-height:1.4">
+        Alım Eşiği: <strong style="color:var(--green)">-${(dynamicBuyThreshold*100).toFixed(1)}%</strong> | 
+        Kâr Hedefi: <strong style="color:var(--teal)">+${(dynamicProfitTarget*100).toFixed(1)}%</strong>
+      </div>
+    </div>
+  `;
+  
   var pool=MOTIVATIONS[motivKey];
   motiv.textContent=pool[Math.floor(Math.random()*pool.length)];
   document.getElementById('saveBtn').disabled=false;
@@ -3359,7 +3505,6 @@ async function saveNotifSettings() {
   var get = (id) => { var el=document.getElementById(id); return el ? el.value : ''; };
   var getChk = (id) => { var el=document.getElementById(id); return el ? el.checked : false; };
   notifSettings = {
-    email: get('notifEmail'),
     freq: parseInt(get('notifFreq')),
     // (saat aralığı ayarı kaldırıldı)
     cooldownEnabled: getChk('notifCooldownEnabled'),
