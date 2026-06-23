@@ -1970,12 +1970,14 @@ function analyzePrice() {
   var dynamicProfitTarget = tenFactorScore.profitTarget;   // % kâr: 0.01-0.50
   var marketRegime = tenFactorScore.marketRegime;
   
-  // Dinamik alım kararı: statik %10/%25/%50 yerine dinamik eşik kullan
+  // Alım/satış kararı: SABİT mantık (Ayarlar sayfasında belirtilen %10/%25 sınırları)
+  // Not: 10-faktör dinamik skoru sadece bilgilendirme amaçlı "Alım Eşiği/Kâr Hedefi" kutusunda gösterilir,
+  // gerçek alım/satış kararını DEĞİŞTİRMEZ — bu, Ayarlar sayfasının vaat ettiği sabit sistemle tutarlı kalsın diye.
   if(state.totalBtc===0){
     action='BUY_INIT'; buyAmount=buySteps.init; pct=0;
   } else {
     pct=((price-state.avgCost)/state.avgCost)*100;
-    if(pct>dynamicProfitTarget*100){ // Dinamik kâr hedefine ulaştı mı?
+    if(pct>0){ // Her kârda satış önerilir (orijinal mantık)
       action='SELL';
       var profitFraction=(price-state.avgCost)/price;
       var totalSellVal=state.totalBtc*profitFraction*price; // toplam kâr TL
@@ -1992,11 +1994,10 @@ function analyzePrice() {
       motivKey='sell';
     } else {
       action='BUY';
-      // Dinamik alım eşikleri (pct negatif olduğu için eşikleri de negatif yapıyoruz!)
-      var buyThresholdPct = dynamicBuyThreshold * 100; // örn. 20 (yüzde, pozitif)
-      if(pct >= -buyThresholdPct * 0.5) buyAmount=buySteps.s1;              // 0% → eşiğin yarısı (hafif düşüş)
-      else if(pct >= -buyThresholdPct) buyAmount=buySteps.s2;               // Eşiğin yarısı → tam eşik (orta düşüş)
-      else buyAmount=buySteps.s3;                                          // Eşiği geçti (derin düşüş)
+      // Kademe seçimi: Ayarlar sayfasında belirtilen SABİT %10/%25 sınırları kullanılır
+      if(pct>=-10) buyAmount=buySteps.s1;        // 0% — -10%
+      else if(pct>=-25) buyAmount=buySteps.s2;   // -10% — -25%
+      else buyAmount=buySteps.s3;                // -25% ve altı
     }
   }
   var btcBought=buyAmount>0?buyAmount/price:0;
@@ -2194,14 +2195,16 @@ function analyzePrice() {
       <div style="font-weight:700;color:var(--gold);margin-bottom:6px">📊 TOPLAM SKOR: ${overallScore}/100</div>
       <div style="font-size:.78rem;color:var(--text);line-height:1.7">
         <strong>Piyasa Rejimi:</strong> ${marketRegime}<br>
-        <strong>Alım Eşiği:</strong> -${(dynamicBuyThreshold*100).toFixed(1)}% ${state.avgCost ? `→ <span style="color:var(--green);font-family:'JetBrains Mono'">${fmtCur(buyThresholdPrice,0)}</span> altına düşerse` : '(henüz ort. maliyet yok)'}<br>
-        <strong>Kâr Hedefi:</strong> +${(dynamicProfitTarget*100).toFixed(1)}% ${state.avgCost ? `→ <span style="color:var(--teal);font-family:'JetBrains Mono'">${fmtCur(profitTargetPrice,0)}</span> üzerine çıkarsa` : '(henüz ort. maliyet yok)'}
+        <strong>Alım Eşiği (öneri):</strong> -${(dynamicBuyThreshold*100).toFixed(1)}% ${state.avgCost ? `→ <span style="color:var(--green);font-family:'JetBrains Mono'">${fmtCur(buyThresholdPrice,0)}</span> altına düşerse` : '(henüz ort. maliyet yok)'}<br>
+        <strong>Kâr Hedefi (öneri):</strong> +${(dynamicProfitTarget*100).toFixed(1)}% ${state.avgCost ? `→ <span style="color:var(--teal);font-family:'JetBrains Mono'">${fmtCur(profitTargetPrice,0)}</span> üzerine çıkarsa` : '(henüz ort. maliyet yok)'}
       </div>
+      <div style="font-size:.66rem;color:var(--muted);margin-top:6px;font-style:italic">ℹ️ Bu değerler piyasa koşullarına göre bilgilendirme amaçlıdır. Gerçek alım/satış kararı Ayarlar'daki sabit %10/%25 kademeleri ve mevcut kâr/zarar durumuna göre verilir.</div>
     </div>
   `;
   
   document.getElementById('scoreDetailsBody').innerHTML = scoreDetailsHtml;
   document.getElementById('analyzeResults').style.display = 'block';
+  var pool=MOTIVATIONS[motivKey];
   motiv.textContent=pool[Math.floor(Math.random()*pool.length)];
   document.getElementById('saveBtn').disabled=false;
   updateCards(state,price);
@@ -2223,12 +2226,15 @@ function analyzePrice() {
    SAVE TRANSACTION
 ═══════════════════════════════════════ */
 function saveTransaction() {
+  var btn = document.getElementById('saveBtn');
   if(!lastAnalysis) { showToast('Önce Analiz Et butonuna bas!','error'); return; }
+  if(btn){ btn.textContent='⏳ Kaydediliyor...'; }
   try {
     _saveTransactionInner();
   } catch(err) {
     showToast('❌ Kaydetme hatası: ' + err.message, 'error');
     console.error('saveTransaction hatası:', err);
+    if(btn){ btn.textContent='💾 Kaydet'; btn.disabled=false; }
   }
 }
 
