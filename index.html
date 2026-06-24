@@ -1581,6 +1581,28 @@ var livePrice = null;      // Son çekilen canlı BTC/TRY fiyatı
 var livePriceTime = null;  // Son çekim zamanı (Date)
 var liveAutoTimer = null;
 
+// ── GERÇEK ATH (TRY) — 24 saat cache'li, localStorage'da saklanır ──
+var cachedAthTry = parseFloat(localStorage.getItem('btc_ath_try')) || null;
+var ATH_CACHE_MS = 24 * 60 * 60 * 1000; // 24 saat
+
+async function fetchBtcAth() {
+  var cachedTime = parseInt(localStorage.getItem('btc_ath_time') || '0');
+  if (cachedAthTry && (Date.now() - cachedTime) < ATH_CACHE_MS) {
+    return cachedAthTry; // Cache taze, API'ye gitmeye gerek yok
+  }
+  try {
+    var res = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false');
+    var data = await res.json();
+    var athTry = data?.market_data?.ath?.try;
+    if (athTry) {
+      cachedAthTry = athTry;
+      localStorage.setItem('btc_ath_try', athTry.toString());
+      localStorage.setItem('btc_ath_time', Date.now().toString());
+    }
+  } catch(e) { /* sessiz hata, cache'deki eski değer kullanılır */ }
+  return cachedAthTry;
+}
+
 // Tek API çağrısı — başka hiçbir fonksiyon doğrudan fetch yapmaz
 async function fetchCoinGeckoTry() {
   var res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=try');
@@ -1772,8 +1794,8 @@ function compute10FactorScore(transactions, state, currentPrice, change24h, fg, 
   raw.lastTxDays = daysSinceLastTx;
   scores.lastTxDays = daysSinceLastTx > 30 ? 80 : 50 + (daysSinceLastTx / 30) * 30;
   
-  // 8️⃣ ATH'YA UZAKLIK (TRY bazında yaklaşık ATH ~3.9M TL, 65000 USD × ~33 kur referansı)
-  var btcAthTry = 3900000;
+  // 8️⃣ ATH'YA UZAKLIK — gerçek ATH, cache'lenmiş (24 saat), CoinGecko'dan
+  var btcAthTry = cachedAthTry || (122000 * 46.5); // Cache yoksa son bilinen tahmini değer
   var athDistPct = ((btcAthTry - currentPrice) / btcAthTry) * 100;
   raw.athDistance = athDistPct;
   scores.athDistance = athDistPct < 5 ? 20 : Math.min(60, 50 + (athDistPct / 30) * 10);
@@ -1949,9 +1971,10 @@ function renderTxList() {
   document.getElementById('txList').innerHTML = html;
 }
 
-function analyzePrice() {
+async function analyzePrice() {
   var price=parsePrice(document.getElementById('priceInput').value);
   if(!price||price<=0){showToast('Geçerli bir fiyat gir!','error');return;}
+  await fetchBtcAth(); // Cache taze ise anında döner, değilse tazeler
   var state=computeState(getTxs());
   var txs=getTxs();
   var action,buyAmount=0,sellAmount=0,realizeAmount=0,anaparaAmount=0,pct=0,motivKey='buy';
@@ -3192,7 +3215,7 @@ async function autoSaveToDrive() {
     await fetch(DRIVE_URL, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({transactions:allTransactions, portfolios, goal:userGoal, investDays, steps:buySteps, badgeCount:earnedBadges.length, notifSettings, currentState:{currentPrice: livePrice || 0}}),
+      body: JSON.stringify({transactions:allTransactions, portfolios, goal:userGoal, investDays, steps:buySteps, badgeCount:earnedBadges.length, notifSettings, currentState:{currentPrice: livePrice || 0, currentPriceTime: livePriceTime ? livePriceTime.getTime() : 0}}),
       mode: 'no-cors'
     });
     console.log('Otomatik Drive senkronizasyonu tamam.');
@@ -3228,7 +3251,7 @@ async function driveSaveConfirmed(){
   var btn=document.getElementById('driveSaveBtn');
   btn.textContent='⏳'; btn.disabled=true;
   try {
-    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactions:allTransactions,portfolios,goal:userGoal,investDays,steps:buySteps,badgeCount:earnedBadges.length,notifSettings,currentState:{currentPrice: livePrice || 0}}),mode:'no-cors'});
+    await fetch(DRIVE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactions:allTransactions,portfolios,goal:userGoal,investDays,steps:buySteps,badgeCount:earnedBadges.length,notifSettings,currentState:{currentPrice: livePrice || 0, currentPriceTime: livePriceTime ? livePriceTime.getTime() : 0}}),mode:'no-cors'});
     showToast('☁️ Drive\'a kaydedildi!','success');
     btn.textContent='✅'; btn.classList.add('saving');
     setTimeout(()=>{btn.textContent='☁️ Kaydet';btn.disabled=false;btn.classList.remove('saving');},2500);
@@ -3704,6 +3727,7 @@ async function driveSaveNotif() {
           txCount: getTxs().length,
           cycleHistory,
           currentPrice: currentPrice || 0, // 🔥 Canlı fiyat eklendi!
+          currentPriceTime: livePriceTime ? livePriceTime.getTime() : Date.now(),
         }
       }),
       mode:'no-cors'
@@ -3740,6 +3764,7 @@ autoSyncFromDrive();
 // Açılışta canlı fiyatı bir kez çek, sonra 5dk'da bir otomatik yenile
 refreshLivePrice(false);
 startLivePriceAutoRefresh();
+fetchBtcAth(); // ATH'yi sessizce çek/cache'le (24 saatte bir tazelenir)
 </script>
 </body>
 </html>
